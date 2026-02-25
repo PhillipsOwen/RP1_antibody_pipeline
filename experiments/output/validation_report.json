@@ -1,0 +1,11 @@
+{
+  "n_samples": 38,
+  "metrics": {
+    "pearson_r": 0.2974,
+    "spearman_rho": 0.3093,
+    "top10_recall": 0.6667,
+    "top20_recall": 0.6667,
+    "roc_auc": 0.6476,
+    "rmse": 0.9668
+  }
+}

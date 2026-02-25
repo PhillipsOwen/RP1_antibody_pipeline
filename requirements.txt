@@ -1,0 +1,44 @@
+# ─── Core scientific stack ────────────────────────────────────────────────────
+numpy>=1.24
+scipy>=1.10
+scikit-learn>=1.3
+
+# ─── Deep learning ────────────────────────────────────────────────────────────
+torch>=2.1
+transformers>=4.35       # ESM-2 and other protein LMs
+
+# ─── Molecular dynamics ───────────────────────────────────────────────────────
+mdtraj>=1.9              # trajectory loading and featurisation
+
+# MD simulation engines — install separately via conda or package manager:
+#   OpenMM  :  conda install -c conda-forge openmm
+#   GROMACS :  conda install -c bioconda gromacs
+#              or build from source: https://manual.gromacs.org/current/install-guide
+#   CHARMM  :  academic license required — https://www.charmm.org/charmm/
+#   pdbfixer:  conda install -c conda-forge pdbfixer   (PDB structure preparation)
+
+# ─── MSM ──────────────────────────────────────────────────────────────────────
+# pyemma>=2.5            # Markov State Models (optional; NumPy fallback built-in)
+#                          Install: conda install -c conda-forge pyemma
+
+# ─── Visualisation ────────────────────────────────────────────────────────────
+matplotlib>=3.7
+seaborn>=0.12
+
+# ─── Data ─────────────────────────────────────────────────────────────────────
+pandas>=2.0
+
+# ─── Dimensionality reduction (optional) ─────────────────────────────────────
+# umap-learn>=0.5        # UMAP for embedding visualisation
+
+# ─── Bioinformatics ───────────────────────────────────────────────────────────
+biopython>=1.81          # FASTA/PDB parsing, sequence tools, OAS data handling
+
+# ─── BCR repertoire data ──────────────────────────────────────────────────────
+# OAS (Observed Antibody Space) public repertoires:
+#   https://opig.stats.ox.ac.uk/webapps/oas/
+#   Bulk download via OAS web interface or API — no pip package required.
+#   Downloaded CSV files are read by data/bcr_loader.py.
+
+# ─── Parallel processing ─────────────────────────────────────────────────────
+# ray>=2.7               # distributed repertoire-scale evaluation (optional)
