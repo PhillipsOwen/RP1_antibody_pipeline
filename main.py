@@ -39,27 +39,27 @@ from typing import List
 
 import numpy as np
 
-from .config import config, PipelineConfig, MODELS_DIR
-from .models.antibody_lm import get_lm
-from .models.vae import AntibodyVAE
-from .models.gan import AntibodyGAN
-from .models.alm_finetuner import ALMFineTuner
-from .md_simulations.md_runner import TrajectoryAnalyzer, generate_mock_trajectory
-from .md_simulations.binding_md import BindingMDPredictor
-from .md_simulations.structural_pathways import AgAbComplexBuilder, BindingPathwaySimulator
-from .msm_analysis.msm_builder import MSMBuilder
-from .synthetic_evolution.evolution import RepertoireEvolver, diversity_score
-from .viral_escape.escape_mutant import EscapeMutantGenerator, EscapeMutant
-from .viral_escape.binding_predictor import CrossReactivityScorer
-from .viral_escape.antigen_profile import AntigenBindingSiteProfiler
-from .viral_escape.blind_spot import BlindSpotAnalyzer
-from .data.bcr_loader import load_repertoire, BCRRepertoire
-from .experiments.lab_loop import LabInTheLoop
-from .experiments.validation import (
+from RP1_antibody_pipeline.config import config, PipelineConfig, MODELS_DIR
+from RP1_antibody_pipeline.models.antibody_lm import get_lm
+from RP1_antibody_pipeline.models.vae import AntibodyVAE
+from RP1_antibody_pipeline.models.gan import AntibodyGAN
+from RP1_antibody_pipeline.models.alm_finetuner import ALMFineTuner
+from RP1_antibody_pipeline.md_simulations.md_runner import TrajectoryAnalyzer, generate_mock_trajectory
+from RP1_antibody_pipeline.md_simulations.binding_md import BindingMDPredictor
+from RP1_antibody_pipeline.md_simulations.structural_pathways import AgAbComplexBuilder, BindingPathwaySimulator
+from RP1_antibody_pipeline.msm_analysis.msm_builder import MSMBuilder
+from RP1_antibody_pipeline.synthetic_evolution.evolution import RepertoireEvolver, diversity_score
+from RP1_antibody_pipeline.viral_escape.escape_mutant import EscapeMutantGenerator, EscapeMutant
+from RP1_antibody_pipeline.viral_escape.binding_predictor import CrossReactivityScorer
+from RP1_antibody_pipeline.viral_escape.antigen_profile import AntigenBindingSiteProfiler
+from RP1_antibody_pipeline.viral_escape.blind_spot import BlindSpotAnalyzer
+from RP1_antibody_pipeline.data.bcr_loader import load_repertoire, BCRRepertoire
+from RP1_antibody_pipeline.experiments.lab_loop import LabInTheLoop
+from RP1_antibody_pipeline.experiments.validation import (
     ValidationDataset, generate_report, plot_score_distribution,
     generate_escape_report,
 )
-from .utils.helpers import (
+from RP1_antibody_pipeline.utils.helpers import (
     setup_logging, save_sequences, load_sequences,
     parallel_map, deduplicate, load_all_spike_sequences_from_fasta,
 )
@@ -101,12 +101,12 @@ def stage_bcr_repertoire(
 
     if mock:
         # Generate a tiny synthetic repertoire for pipeline testing
-        from .viral_escape.escape_mutant import AA_ALPHABET
+        from RP1_antibody_pipeline.viral_escape.escape_mutant import AA_ALPHABET
         synthetic = [
             "".join(random.choices(AA_ALPHABET, k=random.randint(90, 110)))
             for _ in range(20)
         ]
-        from .data.bcr_loader import BCRSequence
+        from RP1_antibody_pipeline.data.bcr_loader import BCRSequence
         sequences = [
             BCRSequence(sequence_id=f"mock_{i}", sequence_aa=s,
                         disease=bcr_cfg.disease_label, source="mock")
@@ -140,7 +140,7 @@ def stage_bcr_repertoire(
 
         if not all_seqs:
             logger.warning("No BCR data loaded — atlas will be empty.")
-        from .data.bcr_loader import BCRSequence
+        from RP1_antibody_pipeline.data.bcr_loader import BCRSequence
         repertoire = BCRRepertoire(sequences=all_seqs,
                                    disease_label=bcr_cfg.disease_label)
 
@@ -520,7 +520,7 @@ def stage_structure(cfg: PipelineConfig, sequences: List[str],
 
     # Feature generation: use one-hot + random projection as a stand-in for
     # real structural descriptors (AlphaFold / RoseTTAFold output)
-    from .utils.helpers import one_hot_encode
+    from RP1_antibody_pipeline.utils.helpers import one_hot_encode
     max_len = max(len(s) for s in sequences[:100])
     raw = one_hot_encode(sequences[:100], max_len=max_len)
     features = raw.reshape(raw.shape[0], -1)[:, :cfg.vae.input_dim]
@@ -870,7 +870,7 @@ def run_pipeline(seeds: List[str] | None = None,
             lm_score = score_map[s] if s in score_map else lm.score([s])[0]
             xr_score = _xr_scorer.coverage_fraction(s, escape_panel)
             # Normalise LM score to [0,1] range for blending
-            from .viral_escape.binding_predictor import _normalise_lm_score
+            from RP1_antibody_pipeline.viral_escape.binding_predictor import _normalise_lm_score
             lm_norm = _normalise_lm_score(lm_score)
             blended = alpha * lm_norm + (1 - alpha) * xr_score
             results.append(blended)
