@@ -43,17 +43,6 @@ Complete documentation for the RP1 antibody discovery pipeline.
   - Stage-by-stage breakdown
   - Technical specifications
 
-- **[RP1_conversation.md](RP1_conversation.md)** - Development history
-  - Design decisions
-  - Implementation notes
-  - Conversation log
-
-### Reference
-
-- **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** - Complete navigation guide
-- **[MEMORY.md](MEMORY.md)** - Project context and memory
-- **[session_2026-02-24_rp1-gap-closure.md](session_2026-02-24_rp1-gap-closure.md)** - Gap closure notes
-
 ### Testing
 
 - **[../tests/README.md](../tests/README.md)** - Test suite documentation
@@ -70,13 +59,12 @@ Complete documentation for the RP1 antibody discovery pipeline.
 
 ### I want to analyze checkpoint data
 
-1. Read [CHECKPOINTS_DIRECTORY.md - Using Analysis Tool](CHECKPOINTS_DIRECTORY.md#using-the-analysis-tool)
+1. Read [CHECKPOINTS_DIRECTORY.md](CHECKPOINTS_DIRECTORY.md)
 2. See [CHECKPOINTS.md - Programmatic Usage](CHECKPOINTS.md#programmatic-usage)
 
 ### I want to understand the architecture
 
 1. Start with [RP1_summary.md](RP1_summary.md)
-2. Review [RP1_conversation.md](RP1_conversation.md) for context
 
 ### I want to write tests
 
@@ -86,8 +74,7 @@ Complete documentation for the RP1 antibody discovery pipeline.
 ### I want to extend the pipeline
 
 1. Understand architecture: [RP1_summary.md](RP1_summary.md)
-2. Follow patterns in [RP1_conversation.md](RP1_conversation.md)
-3. Add checkpoints: [CHECKPOINTS.md](CHECKPOINTS.md)
+2. Add checkpoints: [CHECKPOINTS.md](CHECKPOINTS.md)
 
 ## Pipeline Stages Overview
 
@@ -124,10 +111,6 @@ Docs/
 ├── README_CHECKPOINTS.md              # Quick reference
 │
 ├── RP1_summary.md                     # Pipeline architecture
-├── RP1_conversation.md                # Development history
-├── session_2026-02-24_rp1-gap-closure.md  # Session notes
-│
-└── MEMORY.md                          # Project context
 ```
 
 ## Quick Commands
@@ -144,48 +127,42 @@ python -m RP1_antibody_pipeline.main --mock --no-checkpoints
 ### Analyze Checkpoints
 ```bash
 # List runs
-python analyze_checkpoints.py list
+python RP1_antibody_pipeline/analyze_checkpoints.py list
 
 # View stage
-python analyze_checkpoints.py summary <run_id> <stage_name>
+python RP1_antibody_pipeline/analyze_checkpoints.py summary <run_id> <stage_name>
 
 # Compare runs
-python analyze_checkpoints.py compare <stage_name> <run_id_1> <run_id_2>
+python RP1_antibody_pipeline/analyze_checkpoints.py compare <stage_name> <run_id_1> <run_id_2>
 ```
 
 ### Run Tests
 ```bash
-python test_checkpoints.py
+python RP1_antibody_pipeline/test_checkpoints.py
 ```
 
 ## Key Features
 
 ### Checkpoint System
-- ✅ Automatic saving at 16 milestones
-- ✅ Resume from any stage
-- ✅ Multiple data formats
-- ✅ Analysis and comparison tools
-- ✅ Full metadata tracking
+- Automatic saving at 16 milestones
+- Resume from any stage
+- Multiple data formats
+- Analysis and comparison tools
+- Full metadata tracking
 
 ### Pipeline
-- ✅ 16-stage processing pipeline
-- ✅ MD simulation integration
-- ✅ Antibody language models
-- ✅ Machine learning (VAE/GAN, MSM)
-- ✅ Experimental validation
-- ✅ Lab-in-the-loop optimization
+- 16-stage processing pipeline
+- MD simulation integration
+- Antibody language models
+- Machine learning (VAE/GAN, MSM)
+- Experimental validation
+- Lab-in-the-loop optimization
 
 ## Support
 
 - **Issues**: Check [../README.md](../README.md) for contact info
-- **Tests**: Run `python test_checkpoints.py` to verify
+- **Tests**: Run `python RP1_antibody_pipeline/test_checkpoints.py` to verify
 - **Documentation**: You're in the right place!
-
-## External Links
-
-- Repository: [Link to be added]
-- Citation: See [../README.md](../README.md)
-- License: See [../README.md](../README.md)
 
 ---
 

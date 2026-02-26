@@ -231,7 +231,7 @@ See `requirements.txt` for complete list.
 
 ```bash
 # Run all tests
-python test_checkpoints.py
+python RP1_antibody_pipeline/test_checkpoints.py
 
 # Test individual components
 python -m RP1_antibody_pipeline.tests.test_checkpoints
@@ -283,7 +283,7 @@ If you use this pipeline in your research, please cite:
 
 - **Issues**: Report bugs and request features via GitHub issues
 - **Documentation**: See `Docs/` directory
-- **Tests**: Run `python test_checkpoints.py` to verify installation
+- **Tests**: Run `python RP1_antibody_pipeline/test_checkpoints.py` to verify installation
 
 ## Version
 

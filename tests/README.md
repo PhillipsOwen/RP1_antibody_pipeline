@@ -23,7 +23,7 @@ Tests checkpoint manager functionality:
 
 ```bash
 # From project root
-python test_checkpoints.py
+python RP1_antibody_pipeline/test_checkpoints.py
 ```
 
 ### As Python Module
@@ -40,7 +40,7 @@ python -m RP1_antibody_pipeline.tests.test_checkpoints
 .venv\Scripts\activate
 
 # Then run tests
-python test_checkpoints.py
+python RP1_antibody_pipeline/test_checkpoints.py
 ```
 
 ## Expected Output
@@ -157,7 +157,7 @@ python -m RP1_antibody_pipeline.tests.test_new_feature
 
 ```bash
 # Run all tests before committing
-python test_checkpoints.py
+python RP1_antibody_pipeline/test_checkpoints.py
 ```
 
 ### Automated Testing
@@ -168,7 +168,7 @@ Tests can be integrated into CI/CD pipelines:
 # Example GitHub Actions workflow
 - name: Run tests
   run: |
-    python test_checkpoints.py
+    python RP1_antibody_pipeline/test_checkpoints.py
 ```
 
 ## Troubleshooting
@@ -232,7 +232,7 @@ When adding new tests:
 
 ## Support
 
-- **Run tests**: `python test_checkpoints.py`
+- **Run tests**: `python RP1_antibody_pipeline/test_checkpoints.py`
 - **Check status**: All tests should pass with `[SUCCESS]`
 - **Report issues**: See [../README.md](../README.md)
 

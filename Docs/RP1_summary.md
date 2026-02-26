@@ -91,9 +91,7 @@ RP1_antibody_pipeline/
     ├── CHECKPOINTS_DIRECTORY.md        # Directory details
     ├── README_CHECKPOINTS.md           # Quick reference
     ├── DOCUMENTATION_INDEX.md          # Complete navigation
-    ├── RP1_summary.md                  # This file
-    ├── RP1_conversation.md             # Development log
-    └── MEMORY.md                       # Project context
+    └── RP1_summary.md                  # This file
 ```
 
 ---
@@ -647,7 +645,6 @@ Complete documentation available in `Docs/`:
 - **[CHECKPOINTS.md](CHECKPOINTS.md)** - Checkpoint system guide
 - **[CHECKPOINTS_DIRECTORY.md](CHECKPOINTS_DIRECTORY.md)** - Directory details
 - **[DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)** - Complete navigation
-- **[RP1_conversation.md](RP1_conversation.md)** - Development log
 
 ---
 

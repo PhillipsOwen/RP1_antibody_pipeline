@@ -1,32 +1,29 @@
-# RP1 Antibody Pipeline - Checkpoint System
+# RP1 Antibody Pipeline - Checkpoint System Quick Reference
 
-## Quick Reference
+## Files
 
-### Files Incorporated into Codebase
+### Core Checkpoint System
+- `RP1_antibody_pipeline/utils/checkpoint_manager.py` - Main checkpoint functionality
+- `RP1_antibody_pipeline/main.py` - Pipeline with checkpoint integration
 
-1. **Core Checkpoint System**
-   - `RP1_antibody_pipeline/utils/checkpoint_manager.py` - Main checkpoint functionality
-   - `RP1_antibody_pipeline/main.py` - Pipeline integration (modified)
+### Testing & Analysis Tools
+- `RP1_antibody_pipeline/tests/test_checkpoints.py` - Test suite
+- `RP1_antibody_pipeline/utils/analyze_checkpoints.py` - Analysis CLI tool
 
-2. **Testing & Analysis Tools**
-   - `RP1_antibody_pipeline/tests/test_checkpoints.py` - Test suite
-   - `RP1_antibody_pipeline/utils/analyze_checkpoints.py` - Analysis CLI tool
+### Convenience Wrappers (in `RP1_antibody_pipeline/`)
+- `RP1_antibody_pipeline/test_checkpoints.py` - Run tests from project root
+- `RP1_antibody_pipeline/analyze_checkpoints.py` - Run analyzer from project root
 
-3. **Convenience Wrappers** (in project root)
-   - `test_checkpoints.py` - Easy access to tests
-   - `analyze_checkpoints.py` - Easy access to analyzer
-
-4. **Documentation**
-   - `RP1_antibody_pipeline/CHECKPOINTS.md` - Comprehensive documentation
-   - `RP1_antibody_pipeline/data/checkpoints/README.md` - Directory structure guide
+### Checkpoint Storage
+- `RP1_antibody_pipeline/experiments/checkpoints/` - Default checkpoint directory
 
 ## Usage
 
 ### Running Tests
 
 ```bash
-# From project root
-python test_checkpoints.py
+# From project root (MISM/)
+python RP1_antibody_pipeline/test_checkpoints.py
 
 # Or as module
 python -m RP1_antibody_pipeline.tests.test_checkpoints
@@ -36,16 +33,16 @@ python -m RP1_antibody_pipeline.tests.test_checkpoints
 
 ```bash
 # List all checkpoint runs
-python analyze_checkpoints.py list
+python RP1_antibody_pipeline/analyze_checkpoints.py list
 
 # Show stage details
-python analyze_checkpoints.py summary <run_id> <stage_name>
+python RP1_antibody_pipeline/analyze_checkpoints.py summary <run_id> <stage_name>
 
 # Compare runs
-python analyze_checkpoints.py compare <stage_name> <run_id_1> <run_id_2>
+python RP1_antibody_pipeline/analyze_checkpoints.py compare <stage_name> <run_id_1> <run_id_2>
 
 # Export data
-python analyze_checkpoints.py export <run_id> <stage_name>
+python RP1_antibody_pipeline/analyze_checkpoints.py export <run_id> <stage_name>
 
 # As module (from anywhere)
 python -m RP1_antibody_pipeline.utils.analyze_checkpoints list
@@ -65,23 +62,26 @@ python -m RP1_antibody_pipeline.main --mock --no-checkpoints
 
 ```
 MISM/
-├── RP1_antibody_pipeline/
-│   ├── utils/
-│   │   ├── checkpoint_manager.py      # Core system
-│   │   └── analyze_checkpoints.py     # Analysis tool
-│   ├── tests/
-│   │   ├── __init__.py
-│   │   └── test_checkpoints.py        # Test suite
-│   ├── data/
-│   │   └── checkpoints/               # Checkpoint storage
-│   │       ├── README.md
-│   │       └── <timestamp_runs>/
-│   ├── CHECKPOINTS.md                 # Full documentation
-│   └── main.py                        # Pipeline (with checkpoints)
-│
-├── test_checkpoints.py                # Wrapper script
-├── analyze_checkpoints.py             # Wrapper script
-└── README_CHECKPOINTS.md              # This file
+└── RP1_antibody_pipeline/
+    ├── main.py                            # Pipeline entry point
+    ├── test_checkpoints.py                # Wrapper: run tests
+    ├── analyze_checkpoints.py             # Wrapper: run analyzer
+    │
+    ├── utils/
+    │   ├── checkpoint_manager.py          # Core checkpoint system
+    │   └── analyze_checkpoints.py         # Analysis CLI tool
+    │
+    ├── tests/
+    │   ├── __init__.py
+    │   └── test_checkpoints.py            # Test suite
+    │
+    ├── experiments/
+    │   └── checkpoints/                   # Checkpoint storage (default)
+    │       ├── README.md
+    │       └── <timestamp_runs>/
+    │
+    └── Docs/
+        └── CHECKPOINTS.md                 # Full documentation
 ```
 
 ## What Was Implemented
@@ -144,18 +144,9 @@ for run_id in manager.list_runs():
     print(f"{run_id}: {len(stage_5['evolved_sequences'])} sequences")
 ```
 
-## Testing Status
-
-✅ All tests passing:
-- CheckpointManager save/load operations
-- Data integrity verification
-- Module imports from new locations
-- CLI wrapper scripts functional
-- Analysis tools working
-
 ## For More Information
 
-See `RP1_antibody_pipeline/CHECKPOINTS.md` for comprehensive documentation including:
+See `Docs/CHECKPOINTS.md` for comprehensive documentation including:
 - Detailed command reference
 - Advanced usage examples
 - Troubleshooting guide

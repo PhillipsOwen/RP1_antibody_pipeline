@@ -92,16 +92,16 @@ print(f"Stages in run {run_id}: {stages}")
 
 ```bash
 # List all runs
-python analyze_checkpoints.py list
+python RP1_antibody_pipeline/analyze_checkpoints.py list
 
 # Show stage details
-python analyze_checkpoints.py summary <run_id> stage_2_lm_scoring
+python RP1_antibody_pipeline/analyze_checkpoints.py summary <run_id> stage_2_lm_scoring
 
 # Compare runs
-python analyze_checkpoints.py compare stage_5_evolution <run_id_1> <run_id_2>
+python RP1_antibody_pipeline/analyze_checkpoints.py compare stage_5_evolution <run_id_1> <run_id_2>
 
 # Export data
-python analyze_checkpoints.py export <run_id> stage_2b_md_binding --output ./exported
+python RP1_antibody_pipeline/analyze_checkpoints.py export <run_id> stage_2b_md_binding --output ./exported
 ```
 
 ## Process Milestones (16 Stages)
@@ -156,5 +156,5 @@ tar -czf run_20260226_143052.tar.gz RP1_antibody_pipeline/experiments/checkpoint
 ---
 
 For more information, see:
-- `RP1_antibody_pipeline/CHECKPOINTS.md` - Comprehensive documentation
+- `RP1_antibody_pipeline/Docs/CHECKPOINTS.md` - Comprehensive documentation
 - `RP1_antibody_pipeline/utils/checkpoint_manager.py` - Source code

@@ -36,7 +36,7 @@ RP1_antibody_pipeline/Docs/
 ### Supporting Documents
 
 - **[../tests/README.md](../tests/README.md)** - Test suite documentation
-- **[../experiments/checkpoints/README.md](../experiments/checkpoints/README.md)** - Directory info with links to main docs
+- **[../experiments/checkpoints/README.md](../experiments/checkpoints/README.md)** - Checkpoint directory info
 
 ## Pipeline Documentation
 
@@ -48,43 +48,26 @@ RP1_antibody_pipeline/Docs/
    - Stage-by-stage breakdown
    - Technical specifications
 
-2. **[RP1_conversation.md](RP1_conversation.md)**
-   - Development conversation log
-   - Design decisions and rationale
-   - Implementation details
-
-### Session Notes
-
-- **[session_2026-02-24_rp1-gap-closure.md](session_2026-02-24_rp1-gap-closure.md)**
-  - Gap closure session documentation
-  - Missing component implementation
-
-## Project Management
-
-- **[MEMORY.md](MEMORY.md)** - Project memory and context
-
 ## Documentation Structure
 
 ```
 RP1_antibody_pipeline/
+├── README.md                                # Main project readme
+│
 ├── Docs/                                    # All documentation here
-│   ├── README.md                            # Main documentation index
+│   ├── README.md                            # Documentation index
 │   ├── DOCUMENTATION_INDEX.md               # This file
 │   ├── CHECKPOINTS.md                       # Checkpoint system guide
 │   ├── CHECKPOINTS_DIRECTORY.md             # Directory details
 │   ├── README_CHECKPOINTS.md                # Quick reference
 │   ├── RP1_summary.md                       # Pipeline summary
-│   ├── RP1_conversation.md                  # Development log
-│   ├── MEMORY.md                            # Project context
-│   └── session_2026-02-24_rp1-gap-closure.md
 │
 ├── tests/
-│   └── README.md                            # Points to Docs/
+│   └── README.md                            # Test suite docs
 │
 └── experiments/
     └── checkpoints/
-        └── README.md                        # Points to Docs/
-
+        └── README.md                        # Checkpoint directory info
 ```
 
 ## Finding Documentation
@@ -98,7 +81,6 @@ RP1_antibody_pipeline/
 
 **Pipeline Architecture**:
 - Summary: [RP1_summary.md](RP1_summary.md)
-- Development: [RP1_conversation.md](RP1_conversation.md)
 
 **Testing**:
 - Test suite: [../tests/README.md](../tests/README.md)
@@ -110,12 +92,11 @@ RP1_antibody_pipeline/
 2. Check [README_CHECKPOINTS.md](README_CHECKPOINTS.md) for commands
 
 **Analyzing Checkpoints**:
-1. See [CHECKPOINTS_DIRECTORY.md - Using the Analysis Tool](CHECKPOINTS_DIRECTORY.md#using-the-analysis-tool)
+1. See [CHECKPOINTS_DIRECTORY.md](CHECKPOINTS_DIRECTORY.md)
 2. Reference [CHECKPOINTS.md - Commands Reference](CHECKPOINTS.md#commands-reference)
 
 **Understanding the Pipeline**:
 1. Start with [RP1_summary.md](RP1_summary.md)
-2. Dive deeper with [RP1_conversation.md](RP1_conversation.md)
 
 **Writing Tests**:
 1. See [../tests/README.md](../tests/README.md)
@@ -127,7 +108,7 @@ All documentation follows these conventions:
 - Markdown format (GitHub-flavored)
 - Code blocks with language specification
 - Clear section headers
-- Command examples with expected output
+- Command examples
 - Links to related documents
 
 ## Quick Access

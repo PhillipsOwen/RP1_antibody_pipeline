@@ -14,11 +14,13 @@ RP1_antibody_pipeline/
 ├── tests/
 │   ├── __init__.py
 │   └── test_checkpoints.py              # Test suite
+├── test_checkpoints.py                  # Wrapper: run tests from project root
+├── analyze_checkpoints.py               # Wrapper: run analyzer from project root
 └── main.py                              # Pipeline with checkpoint integration
 
 └── experiments/
-    └── checkpoints/
-        ├── README.md                    # Checkpoint directory documentation
+    └── checkpoints/                     # Default checkpoint storage
+        ├── README.md
         └── <run_id>/                    # Timestamped run directories
             ├── stage_0_escape_panel/
             ├── stage_1_bcr_repertoire/
@@ -43,8 +45,8 @@ python -m RP1_antibody_pipeline.main --checkpoint-dir /path/to/checkpoints
 ### Test Checkpoint System
 
 ```bash
-# From project root
-python test_checkpoints.py
+# From project root (wrapper script)
+python RP1_antibody_pipeline/test_checkpoints.py
 
 # Or as a module
 python -m RP1_antibody_pipeline.tests.test_checkpoints
@@ -53,20 +55,20 @@ python -m RP1_antibody_pipeline.tests.test_checkpoints
 ### Analyze Checkpoints
 
 ```bash
-# List all runs
-python analyze_checkpoints.py list
+# From project root (wrapper script)
+python RP1_antibody_pipeline/analyze_checkpoints.py list
 
 # Or as a module
 python -m RP1_antibody_pipeline.utils.analyze_checkpoints list
 
 # Show stage details
-python analyze_checkpoints.py summary <run_id> stage_2_lm_scoring
+python RP1_antibody_pipeline/analyze_checkpoints.py summary <run_id> stage_2_lm_scoring
 
 # Compare runs
-python analyze_checkpoints.py compare stage_5_evolution <run_id_1> <run_id_2>
+python RP1_antibody_pipeline/analyze_checkpoints.py compare stage_5_evolution <run_id_1> <run_id_2>
 
 # Export data
-python analyze_checkpoints.py export <run_id> stage_2b_md_binding --output ./data
+python RP1_antibody_pipeline/analyze_checkpoints.py export <run_id> stage_2b_md_binding --output ./data
 ```
 
 ## Programmatic Usage
@@ -124,26 +126,26 @@ Each checkpoint contains:
 ### Test Commands
 ```bash
 # Run checkpoint tests
-python test_checkpoints.py
+python RP1_antibody_pipeline/test_checkpoints.py
 python -m RP1_antibody_pipeline.tests.test_checkpoints
 ```
 
 ### Analysis Commands
 ```bash
 # List all checkpoint runs
-python analyze_checkpoints.py list
+python RP1_antibody_pipeline/analyze_checkpoints.py list
 
 # Show stage summary with statistics
-python analyze_checkpoints.py summary <run_id> <stage_name>
+python RP1_antibody_pipeline/analyze_checkpoints.py summary <run_id> <stage_name>
 
 # Compare same stage across multiple runs
-python analyze_checkpoints.py compare <stage_name> <run_id_1> <run_id_2> ...
+python RP1_antibody_pipeline/analyze_checkpoints.py compare <stage_name> <run_id_1> <run_id_2> ...
 
 # Export stage data for external analysis
-python analyze_checkpoints.py export <run_id> <stage_name> --output <directory>
+python RP1_antibody_pipeline/analyze_checkpoints.py export <run_id> <stage_name> --output <directory>
 
 # Custom checkpoint directory
-python analyze_checkpoints.py --checkpoint-dir /path/to/checkpoints list
+python RP1_antibody_pipeline/analyze_checkpoints.py --checkpoint-dir /path/to/checkpoints list
 ```
 
 ### Pipeline Commands
@@ -206,32 +208,35 @@ for run_id in manager.list_runs()[-3:]:  # Last 3 runs
 
 ```bash
 # Remove test checkpoints
-rm -rf RP1_antibody_pipeline/data/checkpoints/test/
+rm -rf RP1_antibody_pipeline/experiments/checkpoints/test/
+
+# Remove a specific run
+rm -rf RP1_antibody_pipeline/experiments/checkpoints/<run_id>/
 
 # Archive important runs
-tar -czf run_backup.tar.gz RP1_antibody_pipeline/data/checkpoints/<run_id>/
+tar -czf run_backup.tar.gz RP1_antibody_pipeline/experiments/checkpoints/<run_id>/
 ```
 
 ### Check Disk Usage
 
 ```bash
 # Total checkpoint size
-du -sh RP1_antibody_pipeline/data/checkpoints/
+du -sh RP1_antibody_pipeline/experiments/checkpoints/
 
 # Size per run
-du -sh RP1_antibody_pipeline/data/checkpoints/*/
+du -sh RP1_antibody_pipeline/experiments/checkpoints/*/
 ```
 
 ## Troubleshooting
 
 **Issue**: "FileNotFoundError: Checkpoint not found"
-- **Solution**: Verify stage exists with `python analyze_checkpoints.py list`
+- **Solution**: Verify stage exists with `python RP1_antibody_pipeline/analyze_checkpoints.py list`
 
 **Issue**: Out of disk space
 - **Solution**: Use `--no-checkpoints` flag or clean up old runs
 
 **Issue**: Import errors
-- **Solution**: Ensure you're in the project root and virtual environment is activated
+- **Solution**: Ensure you're running from the project root (`MISM/`) and that the virtual environment is activated
 
 ## Benefits
 
@@ -243,7 +248,7 @@ du -sh RP1_antibody_pipeline/data/checkpoints/*/
 
 ## Additional Documentation
 
-- `data/checkpoints/README.md` - Checkpoint directory structure
+- `Docs/CHECKPOINTS_DIRECTORY.md` - Detailed checkpoint directory structure
 - `utils/checkpoint_manager.py` - Source code documentation
 - `utils/analyze_checkpoints.py` - Analysis tool source
 - `tests/test_checkpoints.py` - Test suite source
