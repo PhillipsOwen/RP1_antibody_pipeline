@@ -63,6 +63,25 @@ from RP1_antibody_pipeline.utils.helpers import (
     setup_logging, save_sequences, load_sequences,
     parallel_map, deduplicate, load_all_spike_sequences_from_fasta,
 )
+from RP1_antibody_pipeline.utils.checkpoint_manager import (
+    CheckpointManager,
+    save_stage_0_escape_panel,
+    save_stage_1_bcr_repertoire,
+    save_stage_2_lm_scoring,
+    save_stage_2a_antigen_profile,
+    save_stage_2b_md_binding,
+    save_stage_2c_alm_finetune,
+    save_stage_2d_blind_spots,
+    save_stage_2_5_pathways,
+    save_stage_3_structure,
+    save_stage_4_msm,
+    save_stage_5_evolution,
+    save_stage_6_screening,
+    save_stage_7_cross_reactivity,
+    save_stage_8_vaccine_design,
+    save_stage_9_validation,
+    save_stage_10_lab_loop,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -809,7 +828,9 @@ def stage_validation(cfg: PipelineConfig, sequences: List[str],
 
 def run_pipeline(seeds: List[str] | None = None,
                  cfg: PipelineConfig | None = None,
-                 mock: bool = False) -> dict:
+                 mock: bool = False,
+                 save_checkpoints: bool = True,
+                 checkpoint_dir: str = "RP1_antibody_pipeline/experiments/checkpoints") -> dict:
     """
     Run the complete RP1 antibody discovery pipeline.
 
@@ -821,6 +842,8 @@ def run_pipeline(seeds: List[str] | None = None,
     seeds : seed antibody sequences (uses EXAMPLE_SEEDS if None)
     cfg   : PipelineConfig (uses module default if None)
     mock  : if True, run with lightweight mock models (fast, no GPU required)
+    save_checkpoints : if True, save intermediate data at each stage milestone
+    checkpoint_dir : directory to store checkpoint data
 
     Returns
     -------
@@ -842,14 +865,26 @@ def run_pipeline(seeds: List[str] | None = None,
     logger.info("RP1 Antibody–Escape Pipeline  |  mock=%s", mock)
     logger.info("Seeds: %d sequences", len(seeds))
 
+    # Initialize checkpoint manager
+    checkpoint_manager = None
+    if save_checkpoints:
+        checkpoint_manager = CheckpointManager(checkpoint_dir=checkpoint_dir)
+        logger.info("Checkpoints will be saved to: %s", checkpoint_manager.run_dir)
+
     # ── Stage 0: Viral escape panel ──
     escape_panel = stage_escape_panel(cfg, mock=mock)
+    if checkpoint_manager:
+        save_stage_0_escape_panel(checkpoint_manager, escape_panel, cfg)
 
     # ── Stage 1: BCR repertoire + atlas ──
     repertoire, atlas = stage_bcr_repertoire(cfg, mock=mock)
+    if checkpoint_manager:
+        save_stage_1_bcr_repertoire(checkpoint_manager, repertoire, atlas, cfg)
 
     # ── Stage 2: LM scoring / generation ──
     sequences, lm_scores = stage_lm(cfg, seeds, mock=mock)
+    if checkpoint_manager:
+        save_stage_2_lm_scoring(checkpoint_manager, sequences, lm_scores, cfg)
 
     # Build a unified LM instance and score cache for downstream stages
     lm = get_lm(use_mock=mock)
@@ -876,28 +911,36 @@ def run_pipeline(seeds: List[str] | None = None,
             results.append(blended)
         return results
 
-    # ── Stage 2a: Antigen-ALM binding site profile ──
-    affinity_matrix = stage_antigen_alm_profile(cfg, sequences, lm, mock=mock)
-
-    # Collect antigen sequences used in stage 2a for MD stage
+    # Collect antigen sequences for stages 2a, 2b, 2.5
     _n_ag = cfg.antigen_alm.n_antigen_sequences or 3
     _antigen_seqs = load_all_spike_sequences_from_fasta(max_records=_n_ag) \
         or [cfg.viral_escape.antigen_sequence]
     if mock:
         _antigen_seqs = _antigen_seqs[:2]
 
+    # ── Stage 2a: Antigen-ALM binding site profile ──
+    affinity_matrix = stage_antigen_alm_profile(cfg, sequences, lm, mock=mock)
+    if checkpoint_manager:
+        save_stage_2a_antigen_profile(checkpoint_manager, affinity_matrix, sequences, _antigen_seqs)
+
     # ── Stage 2b: MD binding prediction ──
     binding_matrix = stage_md_binding_prediction(
         cfg, sequences, _antigen_seqs, lm, mock=mock
     )
+    if checkpoint_manager:
+        save_stage_2b_md_binding(checkpoint_manager, binding_matrix, sequences, _antigen_seqs)
 
     # ── Stage 2.5: Ag-Ab structural pathways ──
     pathway_result = stage_structural_pathways(
         cfg, sequences, _antigen_seqs, lm, mock=mock
     )
+    if checkpoint_manager:
+        save_stage_2_5_pathways(checkpoint_manager, pathway_result)
 
     # ── Stage 2c: ALM fine-tuning ──
     finetuner = stage_alm_finetune(cfg, sequences, binding_matrix, lm, mock=mock)
+    if checkpoint_manager:
+        save_stage_2c_alm_finetune(checkpoint_manager, finetuner, sequences, cfg)
 
     # Rebuild score_map using fine-tuned scores
     lm_scores_ft = finetuner.score_with_finetuning(sequences)
@@ -907,31 +950,49 @@ def run_pipeline(seeds: List[str] | None = None,
     blind_spot_report = stage_blind_spot_analysis(
         cfg, atlas, _antigen_seqs, lm, mock=mock
     )
+    if checkpoint_manager:
+        save_stage_2d_blind_spots(checkpoint_manager, blind_spot_report)
 
     # ── Stage 3: Structure (VAE/GAN) ──
     latent = stage_structure(cfg, sequences, mock=mock)
+    if checkpoint_manager:
+        save_stage_3_structure(checkpoint_manager, latent, sequences, cfg)
 
     # ── Stage 4: MD + MSM ──
     msm = stage_msm(cfg, mock=mock)
+    if checkpoint_manager:
+        save_stage_4_msm(checkpoint_manager, msm, cfg)
 
     # ── Stage 5: Synthetic evolution (escape-aware scorer) ──
     evolved = stage_evolution(cfg, seeds, scorer, mock=mock)
+    evolved_scores = scorer(evolved) if evolved else []
+    if checkpoint_manager:
+        save_stage_5_evolution(checkpoint_manager, evolved, evolved_scores, cfg)
 
     # ── Stage 6: Repertoire-scale screen ──
     top_seqs, top_scores = stage_repertoire_screen(cfg, evolved, scorer)
+    if checkpoint_manager:
+        save_stage_6_screening(checkpoint_manager, top_seqs, top_scores, cfg)
 
     # ── Stage 7: Cross-reactivity against escape panel ──
     coverage_matrix, adaptation = stage_cross_reactivity(
         cfg, top_seqs, escape_panel, lm, mock=mock
     )
+    if checkpoint_manager:
+        save_stage_7_cross_reactivity(checkpoint_manager, coverage_matrix, adaptation,
+                                      top_seqs, escape_panel)
 
     # ── Stage 8: Vaccine candidate selection ──
     vaccine_seqs = stage_vaccine_design(
         cfg, top_seqs, escape_panel, lm, coverage_matrix
     )
+    if checkpoint_manager:
+        save_stage_8_vaccine_design(checkpoint_manager, vaccine_seqs, cfg)
 
     # ── Stage 9: Experimental validation ──
     report_path = stage_validation(cfg, top_seqs, top_scores)
+    if checkpoint_manager:
+        save_stage_9_validation(checkpoint_manager, top_seqs, top_scores, report_path)
 
     # Escape coverage report (cross-reactivity heatmap + coverage stats)
     escape_report_path = generate_escape_report(
@@ -948,6 +1009,8 @@ def run_pipeline(seeds: List[str] | None = None,
     lab_loop_result = stage_lab_loop(
         cfg, top_seqs, top_scores, finetuner, escape_panel, lm, mock=mock
     )
+    if checkpoint_manager:
+        save_stage_10_lab_loop(checkpoint_manager, lab_loop_result)
 
     logger.info("RP1 Pipeline complete.")
     if top_seqs:
@@ -955,6 +1018,8 @@ def run_pipeline(seeds: List[str] | None = None,
     logger.info("Vaccine candidates: %d", len(vaccine_seqs))
     logger.info("Validation report: %s", report_path)
     logger.info("Escape report:      %s", escape_report_path)
+    if checkpoint_manager:
+        logger.info("Checkpoints saved to: %s", checkpoint_manager.run_dir)
 
     return {
         "sequences": top_seqs,
@@ -1000,6 +1065,14 @@ def _parse_args() -> argparse.Namespace:
         "--log-level", default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"]
     )
+    p.add_argument(
+        "--no-checkpoints", action="store_true",
+        help="Disable saving intermediate checkpoints"
+    )
+    p.add_argument(
+        "--checkpoint-dir", default="RP1_antibody_pipeline/experiments/checkpoints",
+        help="Directory to store checkpoints"
+    )
     return p.parse_args()
 
 
@@ -1012,5 +1085,10 @@ if __name__ == "__main__":
         loaded_seqs, _ = load_sequences(args.seeds_csv)
         seeds = loaded_seqs or seeds
 
-    results = run_pipeline(seeds=seeds, mock=args.mock)
+    results = run_pipeline(
+        seeds=seeds,
+        mock=args.mock,
+        save_checkpoints=not args.no_checkpoints,
+        checkpoint_dir=args.checkpoint_dir
+    )
     print(f"\nDone. Report written to: {results['report_path']}")
