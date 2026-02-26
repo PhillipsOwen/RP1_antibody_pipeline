@@ -830,7 +830,7 @@ def run_pipeline(seeds: List[str] | None = None,
                  cfg: PipelineConfig | None = None,
                  mock: bool = False,
                  save_checkpoints: bool = True,
-                 checkpoint_dir: str = "RP1_antibody_pipeline/experiments/checkpoints") -> dict:
+                 checkpoint_dir: str = "experiments/checkpoints") -> dict:
     """
     Run the complete RP1 antibody discovery pipeline.
 
@@ -1070,7 +1070,7 @@ def _parse_args() -> argparse.Namespace:
         help="Disable saving intermediate checkpoints"
     )
     p.add_argument(
-        "--checkpoint-dir", default="RP1_antibody_pipeline/experiments/checkpoints",
+        "--checkpoint-dir", default="experiments/checkpoints",
         help="Directory to store checkpoints"
     )
     return p.parse_args()

@@ -134,7 +134,7 @@ RP1_antibody_pipeline/
     ├── DOCUMENTATION_INDEX.md   # Complete guide
     ├── CHECKPOINTS.md           # Checkpoint system
     ├── CHECKPOINTS_DIRECTORY.md # Directory details
-    └── RP1_summary.md           # Pipeline architecture
+    └── RP1_SUMMARY.md           # Pipeline architecture
 ```
 
 ## Pipeline Stages
@@ -177,7 +177,7 @@ The pipeline automatically saves intermediate results at each stage.
 
 ### Default Location
 ```
-RP1_antibody_pipeline/experiments/checkpoints/
+experiments/checkpoints/
 ```
 
 ### Features
@@ -208,7 +208,7 @@ Complete documentation is available in the `Docs/` directory:
 
 - **[Docs/README.md](Docs/README.md)** - Documentation index
 - **[Docs/CHECKPOINTS.md](Docs/CHECKPOINTS.md)** - Checkpoint system guide
-- **[Docs/RP1_summary.md](Docs/RP1_summary.md)** - Pipeline architecture details
+- **[Docs/RP1_SUMMARY.md](Docs/RP1_SUMMARY.md)** - Pipeline architecture details
 - **[Docs/DOCUMENTATION_INDEX.md](Docs/DOCUMENTATION_INDEX.md)** - Complete navigation
 
 ## Requirements
@@ -300,5 +300,5 @@ If you use this pipeline in your research, please cite:
 **Quick Links**:
 - [Documentation](Docs/README.md)
 - [Checkpoint Guide](Docs/CHECKPOINTS.md)
-- [Pipeline Architecture](Docs/RP1_summary.md)
+- [Pipeline Architecture](Docs/RP1_SUMMARY.md)
 - [Test Suite](tests/README.md)

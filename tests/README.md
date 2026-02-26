@@ -67,17 +67,17 @@ Testing CheckpointManager...
 
 Test checkpoints are saved to:
 ```
-RP1_antibody_pipeline/experiments/checkpoints/test/
+experiments/checkpoints/test/
 ```
 
 ### Cleanup Test Data
 
 ```bash
 # Remove all test checkpoints
-rm -rf RP1_antibody_pipeline/experiments/checkpoints/test/
+rm -rf experiments/checkpoints/test/
 
 # Or manually delete specific test runs
-rm -rf RP1_antibody_pipeline/experiments/checkpoints/test/20260226_*
+rm -rf experiments/checkpoints/test/20260226_*
 ```
 
 ## Test Coverage
@@ -117,7 +117,7 @@ from RP1_antibody_pipeline.utils.checkpoint_manager import CheckpointManager
 def test_new_feature():
     """Test new feature functionality."""
     # Setup
-    manager = CheckpointManager(checkpoint_dir="RP1_antibody_pipeline/experiments/checkpoints/test")
+    manager = CheckpointManager(checkpoint_dir="experiments/checkpoints/test")
 
     # Test logic
     test_data = {"key": "value"}
@@ -197,7 +197,7 @@ manager = CheckpointManager(checkpoint_dir="/writable/path")
 
 **Solution**: Regular cleanup:
 ```bash
-rm -rf RP1_antibody_pipeline/experiments/checkpoints/test/
+rm -rf experiments/checkpoints/test/
 ```
 
 ## Documentation Links

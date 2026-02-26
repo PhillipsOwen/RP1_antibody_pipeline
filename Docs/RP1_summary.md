@@ -91,7 +91,7 @@ RP1_antibody_pipeline/
     ├── CHECKPOINTS_DIRECTORY.md        # Directory details
     ├── README_CHECKPOINTS.md           # Quick reference
     ├── DOCUMENTATION_INDEX.md          # Complete navigation
-    └── RP1_summary.md                  # This file
+    └── RP1_SUMMARY.md                  # This file
 ```
 
 ---
@@ -464,7 +464,7 @@ The checkpoint system automatically saves intermediate results at each of the 16
 ### Default Location
 
 ```
-RP1_antibody_pipeline/experiments/checkpoints/
+experiments/checkpoints/
 ```
 
 ### Checkpoint Structure
@@ -608,7 +608,7 @@ python -m RP1_antibody_pipeline.tests.test_checkpoints
 
 All intermediate data saved to:
 ```
-RP1_antibody_pipeline/experiments/checkpoints/<run_id>/
+experiments/checkpoints/<run_id>/
 ```
 
 ---

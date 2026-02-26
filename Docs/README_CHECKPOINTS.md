@@ -15,7 +15,7 @@
 - `RP1_antibody_pipeline/analyze_checkpoints.py` - Run analyzer from project root
 
 ### Checkpoint Storage
-- `RP1_antibody_pipeline/experiments/checkpoints/` - Default checkpoint directory
+- `experiments/checkpoints/` - Default checkpoint directory
 
 ## Usage
 

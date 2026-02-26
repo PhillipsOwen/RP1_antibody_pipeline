@@ -6,7 +6,7 @@ This directory contains intermediate data files saved at each process milestone 
 
 Each pipeline run creates a unique subdirectory with timestamp:
 ```
-RP1_antibody_pipeline/experiments/checkpoints/
+experiments/checkpoints/
 └── 20260226_143052/          # Run ID: YYYYMMDD_HHMMSS
     ├── stage_0_escape_panel/
     │   ├── metadata.json      # Stage metadata and config
@@ -51,7 +51,7 @@ RP1_antibody_pipeline/experiments/checkpoints/
 python -m RP1_antibody_pipeline.main --mock
 ```
 
-Checkpoints will be saved to: `RP1_antibody_pipeline/experiments/checkpoints/<timestamp>/`
+Checkpoints will be saved to: `experiments/checkpoints/<timestamp>/`
 
 ### Running without Checkpoints
 ```bash
@@ -68,7 +68,7 @@ python -m RP1_antibody_pipeline.main --checkpoint-dir /path/to/checkpoints
 ```python
 from RP1_antibody_pipeline.utils.checkpoint_manager import CheckpointManager
 
-# Initialize manager (uses RP1_antibody_pipeline/experiments/checkpoints by default)
+# Initialize manager (uses RP1_antibody_pipeline/experiments by default)
 manager = CheckpointManager()
 
 # List available runs
@@ -144,13 +144,13 @@ Checkpoints can consume significant disk space. Consider:
 
 ```bash
 # Remove test checkpoints
-rm -rf RP1_antibody_pipeline/experiments/checkpoints/test/
+rm -rf experiments/checkpoints/test/
 
 # Remove a specific run
-rm -rf RP1_antibody_pipeline/experiments/checkpoints/20260226_143052/
+rm -rf experiments/checkpoints/20260226_143052/
 
 # Archive a run
-tar -czf run_20260226_143052.tar.gz RP1_antibody_pipeline/experiments/checkpoints/20260226_143052/
+tar -czf run_20260226_143052.tar.gz experiments/checkpoints/20260226_143052/
 ```
 
 ---

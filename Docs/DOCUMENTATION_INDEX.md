@@ -36,13 +36,12 @@ RP1_antibody_pipeline/Docs/
 ### Supporting Documents
 
 - **[../tests/README.md](../tests/README.md)** - Test suite documentation
-- **[../experiments/checkpoints/README.md](../experiments/checkpoints/README.md)** - Checkpoint directory info
 
 ## Pipeline Documentation
 
 ### Architecture and Design
 
-1. **[RP1_summary.md](RP1_summary.md)**
+1. **[RP1_SUMMARY.md](RP1_SUMMARY.md)**
    - Pipeline architecture overview
    - Component descriptions
    - Stage-by-stage breakdown
@@ -60,14 +59,13 @@ RP1_antibody_pipeline/
 │   ├── CHECKPOINTS.md                       # Checkpoint system guide
 │   ├── CHECKPOINTS_DIRECTORY.md             # Directory details
 │   ├── README_CHECKPOINTS.md                # Quick reference
-│   ├── RP1_summary.md                       # Pipeline summary
+│   ├── RP1_SUMMARY.md                       # Pipeline summary
 │
 ├── tests/
 │   └── README.md                            # Test suite docs
 │
 └── experiments/
-    └── checkpoints/
-        └── README.md                        # Checkpoint directory info
+    └── checkpoints/                         # Checkpoint data storage
 ```
 
 ## Finding Documentation
@@ -80,7 +78,7 @@ RP1_antibody_pipeline/
 - Quick reference: [README_CHECKPOINTS.md](README_CHECKPOINTS.md)
 
 **Pipeline Architecture**:
-- Summary: [RP1_summary.md](RP1_summary.md)
+- Summary: [RP1_SUMMARY.md](RP1_SUMMARY.md)
 
 **Testing**:
 - Test suite: [../tests/README.md](../tests/README.md)
@@ -96,7 +94,7 @@ RP1_antibody_pipeline/
 2. Reference [CHECKPOINTS.md - Commands Reference](CHECKPOINTS.md#commands-reference)
 
 **Understanding the Pipeline**:
-1. Start with [RP1_summary.md](RP1_summary.md)
+1. Start with [RP1_SUMMARY.md](RP1_SUMMARY.md)
 
 **Writing Tests**:
 1. See [../tests/README.md](../tests/README.md)
@@ -118,7 +116,7 @@ All documentation follows these conventions:
 | [CHECKPOINTS.md](CHECKPOINTS.md) | Complete checkpoint guide | All users |
 | [CHECKPOINTS_DIRECTORY.md](CHECKPOINTS_DIRECTORY.md) | Directory structure | Developers |
 | [README_CHECKPOINTS.md](README_CHECKPOINTS.md) | Quick reference | All users |
-| [RP1_summary.md](RP1_summary.md) | Pipeline overview | Developers |
+| [RP1_SUMMARY.md](RP1_SUMMARY.md) | Pipeline overview | Developers |
 | [../tests/README.md](../tests/README.md) | Test documentation | Developers |
 
 ## Contributing Documentation

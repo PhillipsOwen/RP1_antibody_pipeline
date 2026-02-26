@@ -17,7 +17,7 @@ import numpy as np
 from .checkpoint_manager import CheckpointManager
 
 
-def list_all_runs(checkpoint_dir: str = "RP1_antibody_pipeline/experiments/checkpoints"):
+def list_all_runs(checkpoint_dir: str = "experiments/checkpoints"):
     """List all available pipeline runs with their stages."""
     manager = CheckpointManager(checkpoint_dir=checkpoint_dir)
     runs = manager.list_runs()
@@ -49,7 +49,7 @@ def list_all_runs(checkpoint_dir: str = "RP1_antibody_pipeline/experiments/check
 
 
 def show_stage_summary(run_id: str, stage_name: str,
-                      checkpoint_dir: str = "RP1_antibody_pipeline/experiments/checkpoints"):
+                      checkpoint_dir: str = "experiments/checkpoints"):
     """Display summary statistics for a specific stage."""
     manager = CheckpointManager(checkpoint_dir=checkpoint_dir)
 
@@ -100,7 +100,7 @@ def show_stage_summary(run_id: str, stage_name: str,
 
 
 def compare_runs(run_ids: List[str], stage_name: str,
-                checkpoint_dir: str = "RP1_antibody_pipeline/experiments/checkpoints"):
+                checkpoint_dir: str = "experiments/checkpoints"):
     """Compare the same stage across multiple runs."""
     manager = CheckpointManager(checkpoint_dir=checkpoint_dir)
 
@@ -148,7 +148,7 @@ def compare_runs(run_ids: List[str], stage_name: str,
 
 
 def export_stage_data(run_id: str, stage_name: str, output_dir: str = ".",
-                     checkpoint_dir: str = "RP1_antibody_pipeline/experiments/checkpoints"):
+                     checkpoint_dir: str = "experiments/checkpoints"):
     """Export checkpoint data for external analysis."""
     manager = CheckpointManager(checkpoint_dir=checkpoint_dir)
 
@@ -185,7 +185,7 @@ def main():
     )
     parser.add_argument(
         "--checkpoint-dir",
-        default="RP1_antibody_pipeline/experiments/checkpoints",
+        default="experiments/checkpoints",
         help="Checkpoint directory"
     )
 

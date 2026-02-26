@@ -13,7 +13,7 @@ def test_checkpoint_manager():
     print("Testing CheckpointManager...")
 
     # Create a test checkpoint manager
-    manager = CheckpointManager(checkpoint_dir="RP1_antibody_pipeline/experiments/checkpoints/test")
+    manager = CheckpointManager(checkpoint_dir="experiments/checkpoints/test")
     print(f"[OK] Initialized CheckpointManager: {manager.run_dir}")
 
     # Test Stage 0: Save escape panel data

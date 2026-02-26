@@ -20,7 +20,6 @@ RP1_antibody_pipeline/
 
 └── experiments/
     └── checkpoints/                     # Default checkpoint storage
-        ├── README.md
         └── <run_id>/                    # Timestamped run directories
             ├── stage_0_escape_panel/
             ├── stage_1_bcr_repertoire/
@@ -208,23 +207,23 @@ for run_id in manager.list_runs()[-3:]:  # Last 3 runs
 
 ```bash
 # Remove test checkpoints
-rm -rf RP1_antibody_pipeline/experiments/checkpoints/test/
+rm -rf experiments/checkpoints/test/
 
 # Remove a specific run
-rm -rf RP1_antibody_pipeline/experiments/checkpoints/<run_id>/
+rm -rf experiments/checkpoints/<run_id>/
 
 # Archive important runs
-tar -czf run_backup.tar.gz RP1_antibody_pipeline/experiments/checkpoints/<run_id>/
+tar -czf run_backup.tar.gz experiments/checkpoints/<run_id>/
 ```
 
 ### Check Disk Usage
 
 ```bash
 # Total checkpoint size
-du -sh RP1_antibody_pipeline/experiments/checkpoints/
+du -sh experiments/checkpoints/
 
 # Size per run
-du -sh RP1_antibody_pipeline/experiments/checkpoints/*/
+du -sh experiments/checkpoints/*/
 ```
 
 ## Troubleshooting

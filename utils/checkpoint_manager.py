@@ -27,7 +27,7 @@ class CheckpointManager:
     - Quality metrics (summary statistics)
     """
 
-    def __init__(self, checkpoint_dir: str = "RP1_antibody_pipeline/experiments/checkpoints", run_id: Optional[str] = None):
+    def __init__(self, checkpoint_dir: str = "experiments/checkpoints", run_id: Optional[str] = None):
         """
         Initialize checkpoint manager.
 

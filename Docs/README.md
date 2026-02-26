@@ -6,7 +6,7 @@ Complete documentation for the RP1 antibody discovery pipeline.
 
 - **[Main README](../README.md)** - Start here for project overview
 - **[CHECKPOINTS.md](CHECKPOINTS.md)** - Complete checkpoint system guide
-- **[RP1_summary.md](RP1_summary.md)** - Pipeline architecture details
+- **[RP1_SUMMARY.md](RP1_SUMMARY.md)** - Pipeline architecture details
 
 ## Documentation Index
 
@@ -14,7 +14,7 @@ Complete documentation for the RP1 antibody discovery pipeline.
 
 1. **[../README.md](../README.md)** - Project overview, quick start, installation
 2. **[CHECKPOINTS.md](CHECKPOINTS.md)** - How to use the checkpoint system
-3. **[RP1_summary.md](RP1_summary.md)** - Understand the pipeline architecture
+3. **[RP1_SUMMARY.md](RP1_SUMMARY.md)** - Understand the pipeline architecture
 
 ### Checkpoint System
 
@@ -38,7 +38,7 @@ Complete documentation for the RP1 antibody discovery pipeline.
 
 ### Pipeline Architecture
 
-- **[RP1_summary.md](RP1_summary.md)** - Pipeline design and architecture
+- **[RP1_SUMMARY.md](RP1_SUMMARY.md)** - Pipeline design and architecture
   - Component descriptions
   - Stage-by-stage breakdown
   - Technical specifications
@@ -64,7 +64,7 @@ Complete documentation for the RP1 antibody discovery pipeline.
 
 ### I want to understand the architecture
 
-1. Start with [RP1_summary.md](RP1_summary.md)
+1. Start with [RP1_SUMMARY.md](RP1_SUMMARY.md)
 
 ### I want to write tests
 
@@ -73,7 +73,7 @@ Complete documentation for the RP1 antibody discovery pipeline.
 
 ### I want to extend the pipeline
 
-1. Understand architecture: [RP1_summary.md](RP1_summary.md)
+1. Understand architecture: [RP1_SUMMARY.md](RP1_SUMMARY.md)
 2. Add checkpoints: [CHECKPOINTS.md](CHECKPOINTS.md)
 
 ## Pipeline Stages Overview
@@ -82,22 +82,22 @@ The pipeline has 16 checkpoint stages:
 
 | Stage | Milestone | Documentation |
 |-------|-----------|---------------|
-| 0 | Viral escape panel | [RP1_summary.md](RP1_summary.md) |
-| 1 | BCR repertoire | [RP1_summary.md](RP1_summary.md) |
-| 2 | LM scoring | [RP1_summary.md](RP1_summary.md) |
-| 2a | Antigen-ALM profile | [RP1_summary.md](RP1_summary.md) |
-| 2b | MD binding | [RP1_summary.md](RP1_summary.md) |
-| 2c | ALM fine-tuning | [RP1_summary.md](RP1_summary.md) |
-| 2d | Blind spots | [RP1_summary.md](RP1_summary.md) |
-| 2.5 | Structural pathways | [RP1_summary.md](RP1_summary.md) |
-| 3 | Structure (VAE/GAN) | [RP1_summary.md](RP1_summary.md) |
-| 4 | MD + MSM | [RP1_summary.md](RP1_summary.md) |
-| 5 | Synthetic evolution | [RP1_summary.md](RP1_summary.md) |
-| 6 | Repertoire screening | [RP1_summary.md](RP1_summary.md) |
-| 7 | Cross-reactivity | [RP1_summary.md](RP1_summary.md) |
-| 8 | Vaccine design | [RP1_summary.md](RP1_summary.md) |
-| 9 | Validation | [RP1_summary.md](RP1_summary.md) |
-| 10 | Lab-in-the-loop | [RP1_summary.md](RP1_summary.md) |
+| 0 | Viral escape panel | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 1 | BCR repertoire | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 2 | LM scoring | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 2a | Antigen-ALM profile | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 2b | MD binding | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 2c | ALM fine-tuning | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 2d | Blind spots | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 2.5 | Structural pathways | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 3 | Structure (VAE/GAN) | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 4 | MD + MSM | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 5 | Synthetic evolution | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 6 | Repertoire screening | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 7 | Cross-reactivity | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 8 | Vaccine design | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 9 | Validation | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
+| 10 | Lab-in-the-loop | [RP1_SUMMARY.md](RP1_SUMMARY.md) |
 
 ## File Organization
 
@@ -110,7 +110,7 @@ Docs/
 ├── CHECKPOINTS_DIRECTORY.md           # Directory structure guide
 ├── README_CHECKPOINTS.md              # Quick reference
 │
-├── RP1_summary.md                     # Pipeline architecture
+├── RP1_SUMMARY.md                     # Pipeline architecture
 ```
 
 ## Quick Commands
