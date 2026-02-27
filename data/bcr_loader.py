@@ -58,14 +58,21 @@ class BCRSequence:
 
     Attributes
     ----------
-    sequence_id  : unique identifier (from OAS or assigned if absent).
-    sequence_aa  : full-length amino acid sequence (VH or VL).
-    v_gene       : V-gene call (e.g. 'IGHV1-2*02').
-    j_gene       : J-gene call (e.g. 'IGHJ4*02').
-    junction_aa  : CDR3 amino acid sequence.
-    isotype      : antibody isotype (e.g. 'IgG', 'IgM').
-    disease      : disease label attached at load time.
-    source       : 'oas' | 'private'.
+    sequence_id    : unique identifier (from OAS or assigned if absent).
+    sequence_aa    : full-length amino acid sequence (VH or VL).
+    v_gene         : V-gene call (e.g. 'IGHV1-2*02').
+    j_gene         : J-gene call (e.g. 'IGHJ4*02').
+    junction_aa    : CDR3 amino acid sequence.
+    isotype        : antibody isotype (e.g. 'IgG', 'IgM').
+    disease        : disease label attached at load time.
+    source         : 'oas' | 'private'.
+    individual_id  : donor/subject identifier — enables per-individual atlas
+                     construction (SA3b) and longitudinal grouping (SA3a).
+    time_point     : integer time point index (e.g. 0 = baseline, 1 = week 4).
+                     Used to order longitudinal BCR samples for SA3a disease-
+                     progression correlation.
+    date_collected : ISO-8601 date string (e.g. '2021-03-15') — human-readable
+                     complement to time_point for longitudinal tracking.
     """
     sequence_id: str
     sequence_aa: str
@@ -75,6 +82,10 @@ class BCRSequence:
     isotype: str = ""
     disease: str = ""
     source: str = ""
+    # SA3 longitudinal / per-individual fields
+    individual_id: str = ""
+    time_point: Optional[int] = None
+    date_collected: str = ""
 
 
 @dataclass
@@ -109,14 +120,67 @@ class BCRRepertoire:
                 if min_len <= len(s.sequence_aa) <= max_len]
         return BCRRepertoire(sequences=kept, disease_label=self.disease_label)
 
+    def group_by_individual(self) -> Dict[str, "BCRRepertoire"]:
+        """
+        Partition sequences by individual_id.
+
+        Returns a dict mapping each individual_id to a BCRRepertoire containing
+        only that donor's sequences.  Sequences with an empty individual_id are
+        grouped under the key 'unknown'.
+
+        Used by SA3b to build per-individual atlases and fingerprints.
+        """
+        groups: Dict[str, List[BCRSequence]] = {}
+        for seq in self.sequences:
+            key = seq.individual_id or "unknown"
+            groups.setdefault(key, []).append(seq)
+        return {
+            ind_id: BCRRepertoire(sequences=seqs, disease_label=self.disease_label)
+            for ind_id, seqs in groups.items()
+        }
+
+    def get_longitudinal_timepoints(
+        self, individual_id: Optional[str] = None
+    ) -> Dict[int, "BCRRepertoire"]:
+        """
+        Return sequences grouped by time_point, optionally filtered to one donor.
+
+        Parameters
+        ----------
+        individual_id : restrict to a single donor (None = all donors pooled).
+
+        Returns
+        -------
+        dict mapping time_point (int) → BCRRepertoire.
+        Sequences without a time_point value are excluded.
+
+        Used by SA3a to correlate paratope distributions with disease progression
+        over time for SARS-CoV-2 variant-susceptibility modelling.
+        """
+        seqs = self.sequences
+        if individual_id is not None:
+            seqs = [s for s in seqs if s.individual_id == individual_id]
+        timepoints: Dict[int, List[BCRSequence]] = {}
+        for seq in seqs:
+            if seq.time_point is not None:
+                timepoints.setdefault(seq.time_point, []).append(seq)
+        return {
+            tp: BCRRepertoire(sequences=s, disease_label=self.disease_label)
+            for tp, s in sorted(timepoints.items())
+        }
+
     def summary(self) -> Dict:
         seqs = self.get_sequences()
         lengths = [len(s) for s in seqs]
+        individuals = {s.individual_id for s in self.sequences if s.individual_id}
+        time_points = {s.time_point for s in self.sequences if s.time_point is not None}
         return {
             "disease": self.disease_label,
             "n_sequences": self.n_sequences,
             "mean_length": sum(lengths) / len(lengths) if lengths else 0,
             "isotypes": list({s.isotype for s in self.sequences if s.isotype}),
+            "n_individuals": len(individuals),
+            "time_points": sorted(time_points),
         }
 
 
@@ -138,12 +202,16 @@ class OASLoader:
     """
 
     # Column name mappings (OAS uses AIRR-C standard names)
-    _SEQ_AA  = "sequence_aa"
-    _SEQ_ID  = "sequence_id"
-    _V_CALL  = "v_call"
-    _J_CALL  = "j_call"
-    _CDR3    = "junction_aa"
-    _ISOTYPE = "isotype"
+    _SEQ_AA     = "sequence_aa"
+    _SEQ_ID     = "sequence_id"
+    _V_CALL     = "v_call"
+    _J_CALL     = "j_call"
+    _CDR3       = "junction_aa"
+    _ISOTYPE    = "isotype"
+    # SA3 longitudinal columns (OAS may supply subject, run_id, or date)
+    _SUBJECT    = "subject"       # maps to individual_id
+    _TIME_POINT = "time_point"    # integer index
+    _DATE       = "date_collected"
 
     def __init__(self, disease_label: str = "unknown"):
         self.disease_label = disease_label
@@ -233,6 +301,8 @@ class OASLoader:
                 if not seq_aa:
                     continue
                 seq_id = row.get(self._SEQ_ID, f"oas_{count}").strip()
+                tp_raw = row.get(self._TIME_POINT, "").strip()
+                time_point = int(tp_raw) if tp_raw.lstrip("-").isdigit() else None
                 yield BCRSequence(
                     sequence_id=seq_id,
                     sequence_aa=seq_aa,
@@ -242,6 +312,9 @@ class OASLoader:
                     isotype=row.get(self._ISOTYPE, "").strip(),
                     disease=self.disease_label,
                     source="oas",
+                    individual_id=row.get(self._SUBJECT, "").strip(),
+                    time_point=time_point,
+                    date_collected=row.get(self._DATE, "").strip(),
                 )
                 count += 1
                 if max_rows is not None and count >= max_rows:
@@ -274,6 +347,9 @@ class PrivateBCRLoader:
         cdr3_col: str = "junction_aa",
         v_gene_col: str = "v_gene",
         isotype_col: str = "isotype",
+        individual_id_col: str = "individual_id",
+        time_point_col: str = "time_point",
+        date_collected_col: str = "date_collected",
     ):
         self.disease_label = disease_label
         self.sequence_col = sequence_col
@@ -281,6 +357,9 @@ class PrivateBCRLoader:
         self.cdr3_col = cdr3_col
         self.v_gene_col = v_gene_col
         self.isotype_col = isotype_col
+        self.individual_id_col = individual_id_col
+        self.time_point_col = time_point_col
+        self.date_collected_col = date_collected_col
 
     def load_csv(
         self,
@@ -300,6 +379,8 @@ class PrivateBCRLoader:
                 seq_aa = row.get(self.sequence_col, "").strip()
                 if not seq_aa:
                     continue
+                tp_raw = row.get(self.time_point_col, "").strip()
+                time_point = int(tp_raw) if tp_raw.lstrip("-").isdigit() else None
                 sequences.append(BCRSequence(
                     sequence_id=row.get(self.id_col, f"private_{i}").strip(),
                     sequence_aa=seq_aa,
@@ -308,6 +389,9 @@ class PrivateBCRLoader:
                     isotype=row.get(self.isotype_col, "").strip(),
                     disease=self.disease_label,
                     source="private",
+                    individual_id=row.get(self.individual_id_col, "").strip(),
+                    time_point=time_point,
+                    date_collected=row.get(self.date_collected_col, "").strip(),
                 ))
                 if max_sequences is not None and len(sequences) >= max_sequences:
                     break

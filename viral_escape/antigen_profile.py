@@ -171,6 +171,114 @@ class AntigenBindingSiteProfiler:
         )
         return matrix
 
+    # ── Epitope binning (SA2) ──────────────────────────────────────────────
+
+    def discretize_affinity_matrix(
+        self,
+        affinity_matrix: np.ndarray,
+        thresholds: "list[float] | None" = None,
+        bin_labels: "list[str] | None" = None,
+    ) -> "list[list[str]]":
+        """
+        Convert a continuous affinity matrix to discrete epitope bin assignments (SA2).
+
+        SA2 requires classifying each antibody by which epitope region it targets,
+        equivalent to computational epitope-binning assays.  This method applies
+        threshold cuts to the (n_antibodies x n_antigens) affinity matrix to assign
+        each antibody-antigen pair to a discrete binding category.
+
+        Parameters
+        ----------
+        affinity_matrix : (n_antibodies, n_antigens) float array from
+                          build_affinity_matrix(), values in [0, 1].
+        thresholds      : ascending list of cut-points in [0, 1].
+                          Default: [0.3, 0.7] -> three bins.
+        bin_labels      : labels for each bin (len = len(thresholds) + 1).
+                          Default: ['non-binder', 'weak', 'strong'].
+
+        Returns
+        -------
+        List of lists: bins[i][j] is the bin label for antibody i vs antigen j.
+        """
+        if thresholds is None:
+            thresholds = [0.3, 0.7]
+        if bin_labels is None:
+            bin_labels = ["non-binder", "weak", "strong"]
+        if len(bin_labels) != len(thresholds) + 1:
+            raise ValueError(
+                f"bin_labels length ({len(bin_labels)}) must be "
+                f"len(thresholds)+1 ({len(thresholds) + 1})."
+            )
+
+        n_ab, n_ag = affinity_matrix.shape
+        result = []
+        for i in range(n_ab):
+            row = []
+            for j in range(n_ag):
+                score = float(affinity_matrix[i, j])
+                label = bin_labels[0]
+                for t_idx, t in enumerate(thresholds):
+                    if score >= t:
+                        label = bin_labels[t_idx + 1]
+                row.append(label)
+            result.append(row)
+
+        logger.info(
+            "Epitope bin assignment: %d antibodies x %d antigens, %d bins",
+            n_ab, n_ag, len(bin_labels),
+        )
+        return result
+
+    def epitope_coverage_by_bin(
+        self,
+        antibody_sequences: "list[str]",
+        antigen_sequences: "list[str]",
+        thresholds: "list[float] | None" = None,
+        bin_labels: "list[str] | None" = None,
+    ) -> dict:
+        """
+        Quantify per-epitope BCR repertoire coverage (SA2).
+
+        SA2 goal: measure what fraction of the BCR repertoire provides coverage
+        for each antigen (epitope bin), identifying antigens with insufficient
+        paratope coverage (immune blind spots at the binning level).
+
+        Returns
+        -------
+        dict with keys:
+          'affinity_matrix' : raw (n_ab, n_ag) float array
+          'bin_assignments' : list[list[str]] from discretize_affinity_matrix()
+          'per_antigen_coverage': dict mapping antigen index -> fraction of
+                                   antibodies in the 'strong' (last) bin
+          'mean_coverage'   : mean coverage fraction across all antigens
+        """
+        if thresholds is None:
+            thresholds = [0.3, 0.7]
+        if bin_labels is None:
+            bin_labels = ["non-binder", "weak", "strong"]
+
+        affinity_matrix = self.build_affinity_matrix(antibody_sequences, antigen_sequences)
+        bins = self.discretize_affinity_matrix(affinity_matrix, thresholds, bin_labels)
+
+        strong_label = bin_labels[-1]
+        n_ab = len(antibody_sequences)
+        per_antigen = {}
+        for j in range(len(antigen_sequences)):
+            strong_count = sum(1 for i in range(n_ab) if bins[i][j] == strong_label)
+            per_antigen[j] = strong_count / max(n_ab, 1)
+
+        mean_cov = float(np.mean(list(per_antigen.values()))) if per_antigen else 0.0
+        logger.info(
+            "Epitope coverage: mean_strong_fraction=%.3f across %d antigens",
+            mean_cov, len(antigen_sequences),
+        )
+        return {
+            "affinity_matrix": affinity_matrix,
+            "bin_assignments": bins,
+            "per_antigen_coverage": per_antigen,
+            "mean_coverage": mean_cov,
+        }
+
     # ── Private ────────────────────────────────────────────────────────────
 
     def _similarity(self, a: np.ndarray, b: np.ndarray) -> float:

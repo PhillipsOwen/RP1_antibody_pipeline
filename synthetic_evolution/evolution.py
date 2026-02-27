@@ -26,6 +26,35 @@ AA_ALPHABET = list("ACDEFGHIKLMNPQRSTVWY")
 # These are residue index ranges: CDR-H1, CDR-H2, CDR-H3
 CDR_REGIONS = [(26, 35), (50, 66), (95, 102)]
 
+# SHM hotspot motif positions (SA2).
+# AID (activation-induced deaminase) preferentially deaminates cytosines in
+# WRCY (W=A/T, R=A/G, C=C, Y=C/T) and its complement RGYW motifs.
+# These are encoded here as a per-position relative elevation factor.
+# The lookup maps each residue to its SHM mutability weight (normalised):
+#   CDR positions already receive elevation via CDR_REGIONS;
+#   J-gene junction positions (approx. 90-110 for VH) receive an additional boost.
+#   Framework residues receive a baseline weight of 1.0.
+def _shm_position_weights(sequence_length: int) -> np.ndarray:
+    """
+    Return per-position SHM mutability weights (SA2).
+
+    Weights reflect:
+    - CDR loop elevation (5x) -- same bias as cdr_focused_mutate
+    - J-gene junction elevation (3x) -- positions 90-110 in VH
+    - Baseline framework weight (1.0)
+
+    The weights are NOT normalised to sum to 1; they are used as per-position
+    mutation probability multipliers relative to the base mutation_rate.
+    """
+    weights = np.ones(sequence_length, dtype=np.float32)
+    # CDR loops
+    for start, end in CDR_REGIONS:
+        weights[start:min(end, sequence_length)] = 5.0
+    # J-gene junction region (approximate VH positions 90-110)
+    j_start, j_end = 90, min(110, sequence_length)
+    weights[j_start:j_end] = np.maximum(weights[j_start:j_end], 3.0)
+    return weights
+
 
 # ─── Data types ──────────────────────────────────────────────────────────────
 
@@ -74,6 +103,36 @@ def cdr_focused_mutate(sequence: str, mutation_rate: float = 0.1,
                      if end <= len(seq))
         rate = mutation_rate * cdr_bias if in_cdr else mutation_rate
         if random.random() < rate:
+            seq[i] = random.choice(AA_ALPHABET)
+    return "".join(seq)
+
+
+def shm_hotspot_mutate(sequence: str, mutation_rate: float = 0.05) -> str:
+    """
+    Position-dependent SHM mutation using AID hotspot weights (SA2).
+
+    SA2 requires mutation rates parameterised by known somatic hypermutation
+    (SHM) hotspot positions (WRCY/RGYW motifs) rather than a uniform rate.
+    This function applies the per-position weight vector from
+    _shm_position_weights() so that CDR loops and J-gene junction positions
+    mutate at elevated rates consistent with known SHM biology.
+
+    Per-position mutation probability = mutation_rate * weight[i]
+    where weight[i] is 5� in CDRs, 3� at the J-junction, and 1� elsewhere.
+
+    Parameters
+    ----------
+    sequence     : antibody amino acid sequence.
+    mutation_rate: base per-residue mutation probability (before weighting).
+
+    Returns
+    -------
+    Mutated sequence string.
+    """
+    seq = list(sequence)
+    weights = _shm_position_weights(len(seq))
+    for i in range(len(seq)):
+        if random.random() < mutation_rate * float(weights[i]):
             seq[i] = random.choice(AA_ALPHABET)
     return "".join(seq)
 
@@ -157,6 +216,8 @@ class RepertoireEvolver:
             return cdr_focused_mutate(seq, self.mutation_rate)
         elif self.mutation_fn == "guided":
             return guided_mutate(seq, self.scorer)
+        elif self.mutation_fn == "shm":
+            return shm_hotspot_mutate(seq, self.mutation_rate)
         else:
             raise ValueError(f"Unknown mutation_fn: {self.mutation_fn}")
 

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -177,6 +177,88 @@ class AntibodyLM:
 
     # ── Atlas construction ────────────────────────────────────────────────────
 
+    def build_individual_atlases(
+        self,
+        sequences_by_individual: Dict[str, List[str]],
+        batch_size: int = 32,
+    ) -> Dict[str, dict]:
+        """
+        Build per-individual embedding atlases from subject-stratified BCR data.
+
+        SA3b: each donor's BCR repertoire is summarised as a separate atlas
+        (centroid + covariance), enabling per-individual B-cell fingerprinting
+        and protection estimation against HIV-1 variants.
+
+        SA3a: atlases built per-donor and per-time-point can be differenced or
+        correlated with disease outcomes for variant-susceptibility modelling.
+
+        Parameters
+        ----------
+        sequences_by_individual : dict mapping individual_id → list of AA seqs.
+        batch_size              : embedding batch size.
+
+        Returns
+        -------
+        dict mapping individual_id → atlas dict (same schema as build_atlas()).
+        Each atlas additionally includes:
+          'individual_id' : the donor identifier.
+          'n_sequences'   : number of sequences embedded for this donor.
+        """
+        atlases: Dict[str, dict] = {}
+        for ind_id, seqs in sequences_by_individual.items():
+            if not seqs:
+                logger.warning("Individual '%s' has no sequences — skipping.", ind_id)
+                continue
+            atlas = self.build_atlas(seqs, disease_label=ind_id, batch_size=batch_size)
+            atlas["individual_id"] = ind_id
+            atlases[ind_id] = atlas
+            logger.info(
+                "Individual atlas built: id=%s  n=%d  dim=%d",
+                ind_id, atlas["n_sequences"], atlas["centroid"].shape[0],
+            )
+        return atlases
+
+    def compute_individual_fingerprint(
+        self,
+        individual_atlas: dict,
+        category_reference_atlases: Dict[str, dict],
+    ) -> Dict[str, float]:
+        """
+        Compute a per-individual B-cell immune fingerprint (SA3b).
+
+        Measures each donor's BCR repertoire similarity to each known
+        neutralization-mechanism category (e.g., V1/V2, V3, gp41 binders)
+        by computing cosine similarity between the individual's atlas centroid
+        and each category reference centroid.
+
+        Parameters
+        ----------
+        individual_atlas            : atlas dict from build_individual_atlases().
+        category_reference_atlases  : dict mapping category_name → reference atlas.
+                                      Build one atlas per neutralization category
+                                      (V1/V2, V3, gp41, etc.) from known antibodies
+                                      in that category.
+
+        Returns
+        -------
+        dict mapping category_name → cosine similarity score in [0, 1].
+        Higher score = individual's repertoire is more similar to that category.
+        """
+        ind_centroid = individual_atlas["centroid"]
+        fingerprint: Dict[str, float] = {}
+        for category, ref_atlas in category_reference_atlases.items():
+            ref_centroid = ref_atlas["centroid"]
+            norm_i = np.linalg.norm(ind_centroid)
+            norm_r = np.linalg.norm(ref_centroid)
+            if norm_i == 0 or norm_r == 0:
+                fingerprint[category] = 0.0
+            else:
+                cos_sim = float(
+                    np.dot(ind_centroid, ref_centroid) / (norm_i * norm_r)
+                )
+                fingerprint[category] = (cos_sim + 1.0) / 2.0  # map [-1,1] → [0,1]
+        return fingerprint
+
     def build_atlas(
         self,
         sequences: List[str],
@@ -323,6 +405,35 @@ class RandomAntibodyLM:
             "embeddings": embeddings,
             "n_sequences": len(sequences),
         }
+
+    def build_individual_atlases(
+        self,
+        sequences_by_individual: Dict[str, List[str]],
+        batch_size: int = 32,
+    ) -> Dict[str, dict]:
+        """Mock per-individual atlases: random embeddings per donor."""
+        atlases: Dict[str, dict] = {}
+        for ind_id, seqs in sequences_by_individual.items():
+            if not seqs:
+                continue
+            embeddings = np.random.randn(len(seqs), 64)
+            atlases[ind_id] = {
+                "individual_id": ind_id,
+                "disease": ind_id,
+                "centroid": embeddings.mean(axis=0),
+                "std": embeddings.std(axis=0),
+                "embeddings": embeddings,
+                "n_sequences": len(seqs),
+            }
+        return atlases
+
+    def compute_individual_fingerprint(
+        self,
+        individual_atlas: dict,
+        category_reference_atlases: Dict[str, dict],
+    ) -> Dict[str, float]:
+        """Mock fingerprint: random similarity per category."""
+        return {cat: random.uniform(0.3, 0.7) for cat in category_reference_atlases}
 
     def atlas_similarity(self, query_sequence: str, atlas: dict) -> float:
         """Mock atlas similarity: uniform random in [0.4, 0.8]."""

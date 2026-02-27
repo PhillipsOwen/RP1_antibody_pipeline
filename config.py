@@ -5,7 +5,7 @@ config.py — Global configuration for the antibody discovery pipeline.
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from RP1_antibody_pipeline.utils.helpers import load_spike_from_fasta
 
@@ -82,12 +82,21 @@ class BCRConfig:
     disease_label     : label used to tag the resulting atlas (e.g. 'COVID-19').
     max_sequences     : cap on sequences loaded per source (None = no limit).
     atlas_output_path : where to save the disease-specific embedding atlas.
+    individual_id_col : CSV column name for donor/subject identifier (SA3).
+                        Maps to BCRSequence.individual_id.
+    time_point_col    : CSV column name for integer time point index (SA3a).
+                        Maps to BCRSequence.time_point.
+    date_collected_col: CSV column name for ISO-8601 collection date (SA3a).
     """
     oas_data_dir: str = str(DATA_DIR / "oas")
     private_data_path: Optional[str] = None
     disease_label: str = "unknown"
     max_sequences: Optional[int] = 10_000
     atlas_output_path: str = str(DATA_DIR / "atlas.pkl")
+    # SA3 longitudinal / per-individual columns
+    individual_id_col: str = "individual_id"
+    time_point_col: str = "time_point"
+    date_collected_col: str = "date_collected"
 
 
 # ─── Molecular Dynamics ──────────────────────────────────────────────────────
@@ -154,6 +163,9 @@ class EvolutionConfig:
     mutation_rate: float = 0.05
     top_fraction: float = 0.2    # fraction selected each generation
     amino_acids: str = "ACDEFGHIKLMNPQRSTVWY"
+    # SA2: mutation operator — 'random' | 'cdr' | 'guided' | 'shm'
+    # 'shm' uses position-dependent SHM hotspot rates (WRCY/RGYW motifs)
+    mutation_fn: str = "shm"
 
 
 # ─── Repertoire Scale ────────────────────────────────────────────────────────
@@ -289,6 +301,79 @@ class VaccineDesignConfig:
     top_candidates: int = 20
 
 
+# ─── SA1: Association Intermediate Analysis ───────────────────────────────────
+
+@dataclass
+class SA1Config:
+    """
+    Configuration for SA1 — atomic-scale association intermediate analysis.
+
+    bound_threshold   : mean inter-chain distance below which a trajectory
+                        frame is labelled 'bound' (nm in real MD; arbitrary
+                        in mock mode).  Passed to
+                        BindingPathwaySimulator.label_intermediate_states().
+    unbound_threshold : mean distance above which a frame is 'unbound'.
+    pdb_sources       : list of PDB file paths forming the multi-complex
+                        dataset for SA1.  Passed to
+                        BindingMDPredictor(pdb_sources=...) to enable
+                        score_multi_structure_ensemble().  Empty list = single-
+                        structure / proxy mode.
+    """
+    bound_threshold: float = 0.55
+    unbound_threshold: float = 0.85
+    pdb_sources: List[str] = field(default_factory=list)
+
+
+# ─── SA2: Repertoire Evolvability ─────────────────────────────────────────────
+
+@dataclass
+class SA2Config:
+    """
+    Configuration for SA2 — repertoire-scale structure-aware analysis.
+
+    epitope_bin_thresholds : ascending list of affinity score cut-points used
+                             by AntigenBindingSiteProfiler.discretize_affinity_matrix().
+                             Default [0.3, 0.7] gives three bins.
+    epitope_bin_labels     : labels for each bin (len = len(thresholds) + 1).
+    use_lm_guided_escape   : if True, EscapeMutantGenerator uses
+                             generate_lm_guided_panel() (PLM-guided, SA2);
+                             if False, falls back to combinatorial generate_panel().
+    """
+    epitope_bin_thresholds: List[float] = field(default_factory=lambda: [0.3, 0.7])
+    epitope_bin_labels: List[str] = field(
+        default_factory=lambda: ["non-binder", "weak", "strong"]
+    )
+    use_lm_guided_escape: bool = True
+
+
+# ─── SA3: Pandemic Preparedness ───────────────────────────────────────────────
+
+@dataclass
+class SA3Config:
+    """
+    Configuration for SA3 — SARS-CoV-2 and HIV-1 case studies.
+
+    pathogen              : 'sars-cov-2' | 'hiv-1' | 'both'.
+    mechanism_categories  : for SA3b (HIV-1), maps neutralization category name
+                            → list of escape panel variant indices in that category.
+                            Example::
+
+                                {
+                                    'V1V2': [0, 1, 2, 5],
+                                    'V3':   [3, 4, 6, 7],
+                                    'gp41': [8, 9],
+                                }
+
+                            Used by CrossReactivityScorer.stratify_by_mechanism().
+    longitudinal_mode     : if True, BCRRepertoire.get_longitudinal_timepoints()
+                            is used during Stage 1 to build per-time-point atlases
+                            for SA3a disease-progression correlation.
+    """
+    pathogen: str = "sars-cov-2"
+    mechanism_categories: Dict[str, List[int]] = field(default_factory=dict)
+    longitudinal_mode: bool = False
+
+
 # ─── Master Config ────────────────────────────────────────────────────────────
 
 @dataclass
@@ -308,6 +393,9 @@ class PipelineConfig:
     alm_finetune: ALMFinetuneConfig = field(default_factory=ALMFinetuneConfig)
     blind_spot: BlindSpotConfig = field(default_factory=BlindSpotConfig)
     lab_loop: LabLoopConfig = field(default_factory=LabLoopConfig)
+    sa1: SA1Config = field(default_factory=SA1Config)
+    sa2: SA2Config = field(default_factory=SA2Config)
+    sa3: SA3Config = field(default_factory=SA3Config)
 
 
 # Default global config instance

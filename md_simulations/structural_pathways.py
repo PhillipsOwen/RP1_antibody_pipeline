@@ -433,6 +433,63 @@ class BindingPathwaySimulator:
         logger.info("Steered MD trajectory saved to %s", traj_path)
         return traj_path
 
+    # ── Association intermediate state labeling (SA1) ─────────────────────
+
+    def label_intermediate_states(
+        self,
+        trajectory: np.ndarray,
+        bound_threshold: float = 0.55,
+        unbound_threshold: float = 0.85,
+    ) -> np.ndarray:
+        """
+        Assign discrete state labels to each trajectory frame (SA1).
+
+        SA1 hypothesis: association intermediate structures play an essential
+        role in antibody-antigen affinity.  This method provides the explicit
+        frame-level annotation needed to:
+          1. Identify which frames belong to the association intermediate regime.
+          2. Feed labelled intermediate frames into MSM motif extraction.
+          3. Provide training signal distinguishing intermediate-state features
+             from both the unbound and final bound states.
+
+        Labels
+        ------
+        0 -- unbound      : mean inter-chain distance above *unbound_threshold*.
+        1 -- intermediate : mean distance between thresholds (association pathway).
+        2 -- bound        : mean distance below *bound_threshold*.
+
+        Parameters
+        ----------
+        trajectory        : (n_frames, n_features) float array from
+                            featurize_pathway() or simulate_mock_pathway().
+        bound_threshold   : mean-distance cutoff below which the complex is
+                            considered bound (nm units in real MD; arbitrary
+                            units in mock mode).
+        unbound_threshold : mean-distance cutoff above which the complex is
+                            considered fully separated.
+
+        Returns
+        -------
+        np.ndarray of shape (n_frames,), dtype int8.
+        Values: 0 = unbound, 1 = intermediate, 2 = bound.
+        """
+        mean_dist = trajectory.mean(axis=1)  # (n_frames,)
+
+        labels = np.ones(len(mean_dist), dtype=np.int8)  # default: intermediate
+        labels[mean_dist < bound_threshold] = 2           # bound
+        labels[mean_dist > unbound_threshold] = 0         # unbound
+
+        counts = {
+            "unbound": int((labels == 0).sum()),
+            "intermediate": int((labels == 1).sum()),
+            "bound": int((labels == 2).sum()),
+        }
+        logger.info(
+            "State labels assigned: unbound=%d  intermediate=%d  bound=%d",
+            counts["unbound"], counts["intermediate"], counts["bound"],
+        )
+        return labels
+
     # ── Pathway featurisation ─────────────────────────────────────────────────
 
     def featurize_pathway(self, trajectory: np.ndarray) -> np.ndarray:

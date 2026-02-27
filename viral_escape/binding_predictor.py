@@ -35,7 +35,7 @@ Outputs
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -271,6 +271,90 @@ class CrossReactivityScorer:
             len(candidates), len(antibody_sequences), min_coverage * 100,
         )
         return candidates[:top_n]
+
+    # ── Mechanism-stratified analysis (SA3b) ────────────────────────────────────────
+
+    def stratify_by_mechanism(
+        self,
+        antibody_sequences: "List[str]",
+        escape_panel: "List[EscapeMutant]",
+        mechanism_categories: "Dict[str, List[int]]",
+        coverage_matrix: "Optional[np.ndarray]" = None,
+    ) -> dict:
+        """
+        Stratify coverage analysis by antibody binding mechanism category (SA3b).
+
+        SA3b categorises antibody neutralization of HIV Env by binding mechanism
+        (e.g., V1/V2 vs V3 binders).  This method partitions the escape panel by
+        epitope-region label and computes per-mechanism coverage fractions,
+        enabling a per-individual B-cell fingerprint that relates antibody category
+        composition to protection against variants.
+
+        Parameters
+        ----------
+        antibody_sequences    : candidate antibody AA sequences.
+        escape_panel          : list of EscapeMutant objects.
+        mechanism_categories  : dict mapping category name → list of escape panel
+                                indices belonging to that category.
+                                Example for HIV Env::
+
+                                    {
+                                        'V1V2': [0, 1, 2, 5],
+                                        'V3':   [3, 4, 6, 7],
+                                        'gp41': [8, 9],
+                                    }
+
+                                For SARS-CoV-2, use RBD epitope sub-regions
+                                (e.g., class I/II/III/IV by Barnes et al.).
+        coverage_matrix       : pre-computed (n_ab x n_variants) matrix.
+                                If None, computed internally.
+
+        Returns
+        -------
+        dict with keys:
+          'overall'          : overall coverage fraction (all variants, all abs)
+          'per_mechanism'    : dict mapping category → {
+                                  'mean_coverage': float,
+                                  'fraction_broadly_neutralising': float,
+                                  'per_antibody_coverage': List[float],
+                              }
+          'dominant_category': name of the mechanism category with highest mean
+                               per-antibody coverage (the 'dominant' fingerprint).
+        """
+        if coverage_matrix is None:
+            coverage_matrix = self.build_coverage_matrix(antibody_sequences, escape_panel)
+
+        overall_coverage = float((coverage_matrix >= self.threshold).mean())
+
+        per_mechanism: dict = {}
+        for cat_name, variant_indices in mechanism_categories.items():
+            if not variant_indices:
+                continue
+            valid_idx = [i for i in variant_indices if i < coverage_matrix.shape[1]]
+            if not valid_idx:
+                continue
+            sub_matrix = coverage_matrix[:, valid_idx]  # (n_ab, n_cat_variants)
+            per_ab_cov = (sub_matrix >= self.threshold).mean(axis=1)  # (n_ab,)
+            per_mechanism[cat_name] = {
+                "mean_coverage": float(per_ab_cov.mean()),
+                "fraction_broadly_neutralising": float((per_ab_cov >= 0.5).mean()),
+                "per_antibody_coverage": per_ab_cov.tolist(),
+            }
+
+        dominant = (
+            max(per_mechanism, key=lambda k: per_mechanism[k]["mean_coverage"])
+            if per_mechanism else None
+        )
+
+        logger.info(
+            "Mechanism stratification: %d categories; dominant=%s overall_cov=%.3f",
+            len(per_mechanism), dominant, overall_coverage,
+        )
+        return {
+            "overall": overall_coverage,
+            "per_mechanism": per_mechanism,
+            "dominant_category": dominant,
+        }
 
     # ── Immune adaptation prediction ──────────────────────────────────────────
 

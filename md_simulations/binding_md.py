@@ -200,11 +200,18 @@ class BindingMDPredictor:
     """
 
     def __init__(self, lm, mock: bool = True, temperature_k: float = 300.0,
-                 pdb_source: Optional[str] = None):
+                 pdb_source: Optional[str] = None,
+                 pdb_sources: Optional[List[str]] = None):
         self.lm = lm
         self.mock = mock
         self.temperature_k = temperature_k
-        self.pdb_source = pdb_source  # optional complex PDB for physics scoring
+        self.pdb_source = pdb_source  # single complex PDB (legacy)
+        # SA1: list of PDB paths for a diverse multi-complex dataset.
+        # When set, _md_interface_energy cycles through structures and
+        # averages scores across the ensemble.
+        self.pdb_sources = pdb_sources or (
+            [pdb_source] if pdb_source else []
+        )
 
     # ── Public API ─────────────────────────────────────────────────────────
 
@@ -258,6 +265,82 @@ class BindingMDPredictor:
         ]
         pairs.sort(key=lambda x: x[2], reverse=True)
         return pairs[:top_n]
+
+    # ── Multi-structure ensemble scoring (SA1) ─────────────────────────────────────────
+
+    def score_multi_structure_ensemble(
+        self,
+        antibody_seqs: List[str],
+        antigen_seqs: List[str],
+    ) -> np.ndarray:
+        """
+        Average binding scores across a panel of Ag-Ab complex structures (SA1).
+
+        SA1 requires a large dataset of diverse antibody-antigen complex
+        structures to characterise association intermediate ensembles.  This
+        method iterates over self.pdb_sources (a list of PDB paths), scores
+        each Ab-Ag pair against every structure in the panel, and returns the
+        mean score matrix.
+
+        This enables multi-complex, multi-target training datasets for the
+        ALM fine-tuning step (Stage 2c), as required by SA1's hypothesis that
+        structural diversity in the training data improves affinity prediction.
+
+        Falls back to predict_binding_scores() (single-structure or proxy) if
+        no multi-structure panel is configured.
+
+        Returns
+        -------
+        np.ndarray of shape (n_antibodies, n_antigens), mean score in [0, 1].
+        """
+        if not self.pdb_sources:
+            logger.info(
+                "No pdb_sources configured; falling back to single-structure "
+                "predict_binding_scores()."
+            )
+            return self.predict_binding_scores(antibody_seqs, antigen_seqs)
+
+        ab_embs = self.lm.embed(antibody_seqs)
+        ag_embs = self.lm.embed(antigen_seqs)
+        n_ab, n_ag = len(antibody_seqs), len(antigen_seqs)
+        ensemble_scores = np.zeros((n_ab, n_ag), dtype=np.float32)
+        valid_count = 0
+
+        for pdb_path in self.pdb_sources:
+            if not Path(pdb_path).exists():
+                logger.warning("PDB not found: %s — skipping.", pdb_path)
+                continue
+            calc = MMPBSACalculator(
+                pdb_path=pdb_path,
+                temperature_k=self.temperature_k,
+            )
+            struct_scores = np.zeros((n_ab, n_ag), dtype=np.float32)
+            for i in range(n_ab):
+                for j in range(n_ag):
+                    struct_scores[i, j] = calc.score_pair(
+                        ab_seq=antibody_seqs[i],
+                        ag_seq=antigen_seqs[j],
+                        pdb_path=pdb_path,
+                        ab_emb=ab_embs[i],
+                        ag_emb=ag_embs[j],
+                    )
+            ensemble_scores += struct_scores
+            valid_count += 1
+
+        if valid_count == 0:
+            logger.warning(
+                "No valid PDB structures found in pdb_sources — using "
+                "embedding proxy."
+            )
+            return self._embedding_proxy(ab_embs, ag_embs)
+
+        result = ensemble_scores / valid_count
+        logger.info(
+            "Multi-structure ensemble: %d structures averaged; "
+            "mean_score=%.3f  shape=%s",
+            valid_count, float(result.mean()), result.shape,
+        )
+        return result
 
     # ── Binding score implementations ──────────────────────────────────────
 

@@ -192,6 +192,109 @@ class MSMBuilder:
         hist = np.where(hist > 0, hist, 1e-10)
         return -kT * np.log(hist)
 
+    # ââ Association intermediate motif extraction (SA1) âââââââââââââââââ
+
+    def extract_macrostate_motifs(
+        self,
+        trajectory: np.ndarray,
+        dtrajs: np.ndarray,
+        state_labels: "np.ndarray | None" = None,
+    ) -> dict:
+        """
+        Extract recurrent structural motifs from MSM macro-states (SA1).
+
+        SA1 goal: identify recurrent structural motifs that define association
+        intermediate states.  After the MSM is estimated and lumped into
+        macro-states, this method characterises each macro-state by computing
+        its mean feature vector, variance, and (optionally) its predominant
+        state label (unbound / intermediate / bound from
+        BindingPathwaySimulator.label_intermediate_states).
+
+        The resulting motif summaries can be compared across a large dataset
+        of diverse Ag-Ab complexes to find structural features that recur
+        specifically in the intermediate-state ensemble.
+
+        Parameters
+        ----------
+        trajectory   : (n_frames, n_features) float array â the same features
+                       used to build the MSM (post-TICA projection or raw).
+        dtrajs       : (n_frames,) integer array of micro-state assignments
+                       from cluster().
+        state_labels : (n_frames,) int8 array from
+                       BindingPathwaySimulator.label_intermediate_states().
+                       0=unbound, 1=intermediate, 2=bound.
+                       If None, label information is omitted from motifs.
+
+        Returns
+        -------
+        dict mapping macro_state_index (int) â motif dict with keys:
+          'mean_features'    : mean feature vector for frames in this macro-state.
+          'std_features'     : std of features for frames in this macro-state.
+          'n_frames'         : number of trajectory frames in this macro-state.
+          'stationary_prob'  : MSM stationary probability of this macro-state.
+          'dominant_label'   : most common state label (0/1/2) if provided,
+                               else None.
+          'intermediate_fraction': fraction of frames labelled as intermediate
+                               (label == 1) if state_labels provided, else None.
+        """
+        self._check_estimated()
+
+        macro_assignments = self.lump_to_macrostates()  # micro â macro map
+        # Map each trajectory frame to its macro-state via dtrajs â macro
+        n_frames = len(dtrajs)
+        frame_macro = np.array(
+            [macro_assignments[int(d)] if int(d) < len(macro_assignments) else 0
+             for d in dtrajs],
+            dtype=int,
+        )
+
+        # Stationary distribution per macro-state (sum over member micro-states)
+        try:
+            pi_micro = self._msm.stationary_distribution
+        except AttributeError:
+            pi_micro = self.stationary_distribution
+        n_macro = self.n_states
+        pi_macro = np.zeros(n_macro)
+        for micro_idx, macro_idx in enumerate(macro_assignments):
+            if macro_idx < n_macro and micro_idx < len(pi_micro):
+                pi_macro[macro_idx] += pi_micro[micro_idx]
+        if pi_macro.sum() > 0:
+            pi_macro /= pi_macro.sum()
+
+        motifs = {}
+        for macro_idx in range(n_macro):
+            mask = frame_macro == macro_idx
+            if not mask.any():
+                continue
+            frames = trajectory[mask]
+            motif: dict = {
+                "mean_features": frames.mean(axis=0),
+                "std_features": frames.std(axis=0),
+                "n_frames": int(mask.sum()),
+                "stationary_prob": float(pi_macro[macro_idx]),
+                "dominant_label": None,
+                "intermediate_fraction": None,
+            }
+            if state_labels is not None:
+                lbls = state_labels[mask]
+                values, counts = np.unique(lbls, return_counts=True)
+                motif["dominant_label"] = int(values[np.argmax(counts)])
+                motif["intermediate_fraction"] = float(
+                    (lbls == 1).sum() / max(len(lbls), 1)
+                )
+            motifs[macro_idx] = motif
+
+        intermediate_states = [
+            k for k, v in motifs.items()
+            if v["intermediate_fraction"] is not None
+            and v["intermediate_fraction"] > 0.5
+        ]
+        logger.info(
+            "Motif extraction: %d macro-states; %d predominantly intermediate",
+            len(motifs), len(intermediate_states),
+        )
+        return motifs
+
     # ── Persistence ───────────────────────────────────────────────────────────
 
     def save(self, tag: str = "msm") -> str:

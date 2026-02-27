@@ -98,6 +98,7 @@ class EscapeMutantGenerator:
         panel_size: int = 50,
         max_mutations: int = 3,
         random_seed: int = 42,
+        lm=None,
     ):
         self.wildtype = wildtype_sequence
         self.epitope = list(epitope_residues) if epitope_residues else list(
@@ -105,6 +106,7 @@ class EscapeMutantGenerator:
         )
         self.panel_size = panel_size
         self.max_mutations = max_mutations
+        self.lm = lm  # optional AntibodyLM for PLM-guided escape (SA2)
         random.seed(random_seed)
         np.random.seed(random_seed)
 
@@ -191,6 +193,88 @@ class EscapeMutantGenerator:
         variants = [self._apply_mutations(muts) for muts in variant_mutations]
         logger.info("Created %d known-variant escape mutants.", len(variants))
         return variants
+
+    # ── PLM-guided escape panel generation (SA2) ────────────────────────────────
+
+    def generate_lm_guided_panel(
+        self, n_samples: int = 50, top_k: int = 10
+    ) -> "List[EscapeMutant]":
+        """
+        Generate escape mutants guided by a protein language model (SA2).
+
+        SA2 requires PLM-driven forward prediction of pathogen variants that
+        evade the existing BCR repertoire — not just exhaustive combinatorial
+        mutagenesis.  This method uses the LM's masked-token predictions at
+        epitope positions to propose amino acid substitutions that are both:
+          1. Structurally plausible (high LM log-probability for the mutant).
+          2. Located at epitope residues (maximising immune escape potential).
+
+        Falls back to generate_panel() if no LM is configured.
+
+        Parameters
+        ----------
+        n_samples : number of LM-guided mutant sequences to generate.
+        top_k     : top-k sampling width passed to lm.generate_mutations().
+
+        Returns
+        -------
+        List[EscapeMutant] sorted by escape_score descending.
+        """
+        if self.lm is None:
+            logger.warning(
+                "No LM configured for PLM-guided escape generation — "
+                "falling back to combinatorial generate_panel()."
+            )
+            return self.generate_panel()
+
+        panel: "List[EscapeMutant]" = []
+        seen_seqs = set()
+
+        # Use LM to generate high-fitness mutations; restrict sampling to
+        # epitope positions by selecting only those mutation proposals that
+        # fall at epitope residues.
+        epitope_set = set(self.epitope)
+        candidates = self.lm.generate_mutations(
+            seed_sequence=self.wildtype,
+            n_mutations=min(self.max_mutations, len(self.epitope)),
+            n_samples=n_samples * 4,  # oversample; filter to epitope hits
+            top_k=top_k,
+        )
+
+        for mutant_seq, _lm_score in candidates:
+            if mutant_seq in seen_seqs or mutant_seq == self.wildtype:
+                continue
+            # Identify which positions changed
+            muts = [
+                (i, self.wildtype[i], mutant_seq[i])
+                for i in range(min(len(self.wildtype), len(mutant_seq)))
+                if mutant_seq[i] != self.wildtype[i]
+            ]
+            # Keep only if at least one mutation is in the epitope
+            if not any(pos in epitope_set for pos, _, _ in muts):
+                continue
+            escape = self._apply_mutations(
+                [(pos, wt, mut) for pos, wt, mut in muts if pos in epitope_set]
+            )
+            panel.append(escape)
+            seen_seqs.add(mutant_seq)
+            if len(panel) >= self.panel_size:
+                break
+
+        # Fill remaining slots with combinatorial panel if LM did not produce enough
+        if len(panel) < self.panel_size:
+            combo = self.generate_panel()
+            for m in combo:
+                if m.mutant_sequence not in seen_seqs and len(panel) < self.panel_size:
+                    panel.append(m)
+                    seen_seqs.add(m.mutant_sequence)
+
+        panel.sort(key=lambda m: m.escape_score, reverse=True)
+        logger.info(
+            "LM-guided escape panel: %d mutants generated (top escape_score=%.3f)",
+            len(panel), panel[0].escape_score if panel else 0.0,
+        )
+        return panel
 
     # ── Escape scoring ────────────────────────────────────────────────────────
 
