@@ -10,7 +10,14 @@ This repository spans three interconnected research projects (RPs) linking withi
 
 **Goal:** Predict and discover broadly neutralizing antibodies against viral escape mutants.
 
-**Approach:** 16-stage computational pipeline integrating viral escape panel generation, BCR repertoire analysis, antibody language models (ESM2), molecular dynamics simulations, VAE/GAN structural modeling, Markov state modeling, synthetic evolution, and a lab-in-the-loop experimental feedback cycle.
+**Approach:** 16-stage computational pipeline integrating viral escape panel generation, BCR repertoire analysis, antibody language models (ESM2), molecular dynamics simulations, VAE/GAN structural modeling, Markov state modeling, synthetic evolution, and a lab-in-the-loop experimental feedback cycle. The pipeline is organized around three Specific Aims operating at distinct biological scales:
+
+| Specific Aim | Scale | Focus |
+|---|---|---|
+| SA1 | Atomic | ML-accelerated MD of association intermediate structures; lab-in-the-loop affinity validation; enriching AI training data with structural depth |
+| SA2 | Repertoire | Structure-aware PLM paratope embeddings; epitope-binning; SHM-hotspot evolvability models; predicting immune-evading pathogen variants |
+| SA3a | Clinical | SARS-CoV-2 variant-response prediction; per-individual variant-susceptibility model from longitudinal BCR data |
+| SA3b | Clinical | HIV-1 Env immune repertoire characterization; per-individual B-cell fingerprint by neutralization mechanism; protection estimation against variants |
 
 **Analysis:** [RP1_analysis.md](RP1_analysis.md)
 

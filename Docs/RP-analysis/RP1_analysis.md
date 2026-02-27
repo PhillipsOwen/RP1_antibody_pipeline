@@ -2,6 +2,84 @@
 
 ---
 
+## Specific Aims Framework
+
+The RP1 pipeline is organized around three Specific Aims that operate at distinct biological scales, together bridging atomic-resolution binding mechanisms to population-level immune repertoire coverage. The pipeline stages below implement these aims computationally.
+
+### SA1 — Atomic Scale: Association Intermediate Structures for Affinity Prediction
+
+**Hypothesis:** Key association intermediate structures play an essential role in antibody-antigen affinity, and AI models need these structural insights in their training data for high-accuracy affinity predictions.
+
+**Approach:** Machine learning-accelerated molecular dynamics (ML-MD) is used to examine association intermediate structures for a large, diverse dataset of antibody-antigen complex structures. A lab-in-the-loop framework validates these simulations using binding affinity assays against panels of existing antibodies. The resulting dataset of association mechanisms identifies recurrent structural motifs and provides deeper structural context for affinity prediction models.
+
+**Pipeline mapping:**
+- **Stage 2b (MD Binding)** — Core ML-accelerated MD simulations of Ag-Ab complexes; MM/PBSA energy calculations capture the energetic landscape of association intermediates
+- **Stage 2.5 (Structural Pathways)** — Explicit analysis of the binding pathway; MSM-based extraction of metastable intermediate states along the association trajectory
+- **Stage 4 (MD + MSM)** — Markov State Models over MD trajectories quantify the kinetics and populations of association intermediates; implied timescales and stationary distributions characterize each state
+- **Stage 2c (ALM Fine-tuning)** — MD-derived binding scores (capturing intermediate-state information) are used as the training signal to fine-tune ESM2; this is the direct computational implementation of the hypothesis that structural intermediate data improves affinity prediction accuracy
+- **Stage 9 (Experimental Validation)** — Binding affinity assays against existing antibody panels close the lab-in-the-loop; Pearson/Spearman correlations and RMSE quantify whether intermediate-informed MD improves prediction
+- **Stage 10 (Lab-in-the-Loop)** — Iterative refinement: experimental binding measurements update the model, driving the next round of MD and ALM fine-tuning
+
+**Key scientific output:** A rich dataset of antibody-antigen association mechanisms annotated with recurrent structural motifs at intermediate states, used to train higher-accuracy affinity prediction models.
+
+---
+
+### SA2 — Repertoire Scale: Structure-Aware BCR Repertoire Analysis and Evolvability Modeling
+
+**Hypothesis:** The massive sequence diversity of B-cell receptors (BCRs) can be distilled by homing in on structural convergence across sequences.
+
+**Approach:** Protein language models (PLMs) construct and scan structure-aware representations of paratopes (antibody regions that contact antigen) across the BCR repertoire. Epitope-binning assays and computational prediction identify epitopes on the antigen and the corresponding paratopes from existing antibodies, enabling quantification of each epitope's coverage. Models of repertoire evolvability are built from known somatic hypermutation (SHM) hotspots; PLMs then predict pathogen evolution that evades the existing BCR repertoire.
+
+**Pipeline mapping:**
+- **Stage 1 (BCR Repertoire + Immune Atlas)** — Loads BCR sequence data from OAS; constructs the immune atlas (centroid + covariance matrix) as a compressed structure-aware representation of paratope diversity across the repertoire
+- **Stage 2 (LM Scoring)** — ESM2 PLM scores each BCR for fitness; the PLM captures structural convergence implicitly through learned evolutionary constraints, implementing the SA2 hypothesis computationally
+- **Stage 2a (Antigen-ALM Binding Profile)** — Binding site prediction across antibody × antigen pairs; computationally identifies which paratopes correspond to which epitopes, equivalent to computational epitope-binning
+- **Stage 2d (Blind Spot Analysis)** — Quantifies per-epitope coverage in the existing BCR repertoire; identifies epitopes with insufficient paratope coverage (immune blind spots), directly implementing SA2's coverage quantification goal
+- **Stage 5 (Synthetic Evolution)** — Genetic algorithm modeling of in-silico affinity maturation; SHM hotspot-aware mutation rates model repertoire evolvability; fitness landscape exploration captures potential antibody trajectories under selective pressure
+- **Stage 6 (Repertoire Screening)** — Repertoire-scale evaluation of candidates; directly measures which fraction of the BCR repertoire provides functional coverage of each epitope bin
+- **Stage 0 (Viral Escape Panel)** — Computational mutagenesis of the antigen implements the pathogen-evolution side of SA2: predicting mutations that evade existing BCR repertoire coverage
+
+**Key scientific output:** Structure-aware paratope embeddings that quantify per-epitope BCR repertoire coverage; evolvability models predicting pathogen variants that outpace the existing immune response, with implications for medical countermeasures.
+
+---
+
+### SA3 — Pandemic Preparedness Case Studies: SARS-CoV-2 and HIV-1
+
+**Approach:** Two parallel case studies apply the SA1 and SA2 methods to clinically relevant pathogens:
+
+**SA3a — SARS-CoV-2 Variant-Response Prediction:**
+- Models and experimentally validates binding sites of antibodies against spike protein variants
+- Analyzes longitudinal BCR repertoire data to correlate the statistical distribution of variant-specific paratopes with observed disease progression
+- Goal: A precision, individualized variant-susceptibility model
+
+**SA3b — HIV-1 Immune Repertoire Characterization:**
+- Antibody neutralization of HIV Env is categorized by binding mechanism (e.g., V1/V2 vs. V3 binders)
+- Evaluates individual responses to HIV-1 acquisition by identifying BCRs structurally concordant with each broad neutralization category
+- Creates a per-individual "fingerprint" of the B-cell immune response profile
+- Relates the fingerprint to protection estimates against variants
+
+**Pipeline mapping:**
+- **Stage 0 (Viral Escape Panel)** — For SA3a: generates SARS-CoV-2 spike protein variants targeting ACE2-contact residues; for SA3b: generates Env protein escape variants across V1/V2 and V3 epitope regions
+- **Stage 1 (BCR Repertoire)** — Longitudinal BCR data loading supports SA3a's correlation with disease progression; per-individual atlas construction supports SA3b's per-individual fingerprinting
+- **Stage 7 (Cross-reactivity Analysis)** — Tests antibody candidates against the full escape panel for both SARS-CoV-2 variants and HIV Env variants; coverage matrix encodes which antibody categories (V1/V2, V3, etc.) neutralize which variants
+- **Stage 8 (Vaccine Design)** — Selects broadly neutralizing candidate sets; for SA3b, the greedy set cover can be stratified by binding mechanism category to ensure representation across neutralization modalities
+- **Stage 9 (Experimental Validation)** — Longitudinal binding assays validate the variant-susceptibility model (SA3a) and the per-individual fingerprint (SA3b); current metrics (Pearson r = 0.276, Spearman = 0.302) establish a baseline to improve
+
+**Key scientific output (SA3a):** A precision, individualized SARS-CoV-2 variant-susceptibility model correlating paratope distribution with disease progression. **Key scientific output (SA3b):** A per-individual HIV-1 B-cell immune fingerprint relating antibody category composition to protection against variants.
+
+---
+
+## Aim-to-Stage Mapping — Consolidated Reference
+
+| Specific Aim | Biological Scale | Primary Pipeline Stages | Secondary Stages |
+|---|---|---|---|
+| SA1: Association Intermediates | Atomic (residue/structure) | 2b, 2.5, 4, 2c | 9, 10 |
+| SA2: Repertoire + Evolvability | Repertoire (sequence population) | 1, 2, 2a, 2d, 5, 6 | 0, 3 |
+| SA3a: SARS-CoV-2 variants | Clinical case study | 0, 7, 8, 9 | 1, 2b, 10 |
+| SA3b: HIV-1 fingerprint | Clinical case study | 0, 1, 7, 8, 9 | 6, 10 |
+
+---
+
 ## Pipeline Overview
 
 RP1 is a 16-stage end-to-end computational pipeline for discovering broadly neutralizing antibodies against viral escape mutants. It integrates molecular biology sequence data, molecular dynamics (MD) simulations, antibody language models (ALMs), generative machine learning (VAE/GAN), Markov state modeling (MSM), and a lab-in-the-loop experimental feedback cycle.
@@ -60,13 +138,25 @@ Checkpoints are saved automatically at each of the 16 stages under `experiments/
 
 ## Key Scientific Objectives
 
-- **Predict viral escape** — computationally generate mutant antigen variants that evade existing antibody coverage.
-- **Profile immune repertoires** — load BCR sequence data, construct immune atlases, and identify coverage gaps (blind spots).
-- **Score and generate antibody candidates** — use pre-trained protein language models to rank and propose sequences.
-- **Predict binding affinity** — use MD simulations and ALM-derived profiles to estimate how tightly each candidate binds each antigen variant.
-- **Optimize candidates** — use synthetic evolution (genetic algorithms) to iteratively improve candidate sequences.
-- **Design broadly neutralizing vaccines** — select candidate sets that together cover the full escape panel.
-- **Close the lab-in-the-loop** — incorporate experimental binding measurements to refine models and prioritize next experiments.
+Organized by Specific Aim:
+
+**SA1 (Atomic Scale)**
+- **Characterize association intermediates** — use ML-accelerated MD to capture and annotate the ensemble of structures along the antibody-antigen association pathway, not just the final bound state.
+- **Enrich AI training data** — incorporate association intermediate structural data into ALM fine-tuning (Stage 2c) to improve affinity prediction accuracy beyond what sequence-level data alone provides.
+- **Identify structural motifs** — extract recurrent structural patterns from association intermediate ensembles that explain affinity differences across diverse Ag-Ab pairs.
+- **Validate with binding assays** — close the lab-in-the-loop (Stages 9, 10) using experimental binding affinity measurements against panels of existing antibodies.
+
+**SA2 (Repertoire Scale)**
+- **Build structure-aware paratope representations** — use protein language models to embed BCR paratopes in a structure-informed space that captures convergence across diverse sequences.
+- **Quantify epitope coverage** — computationally bin paratopes by epitope target and measure each epitope's fractional coverage in the BCR repertoire.
+- **Model repertoire evolvability** — parameterize somatic hypermutation hotspot rates and use PLMs to predict future antibody trajectories under antigen pressure.
+- **Predict immune-evading pathogen variants** — identify mutations that escape the existing BCR repertoire, flagging the need for medical countermeasures.
+
+**SA3 (Pandemic Preparedness)**
+- **SARS-CoV-2 individualized susceptibility** — correlate variant-specific paratope distributions from longitudinal BCR data with disease progression to build a precision variant-susceptibility model per individual.
+- **HIV-1 per-individual B-cell fingerprint** — categorize individual BCR repertoires by structural concordance with known HIV Env neutralization mechanisms (V1/V2, V3) and relate each fingerprint to variant protection estimates.
+- **Predict viral escape** — computationally generate mutant antigen variants (SARS-CoV-2 spike, HIV Env) that evade existing antibody coverage.
+- **Design broadly neutralizing vaccine candidates** — select candidate sets that together cover the full escape panel, stratified by neutralization mechanism for HIV.
 
 ---
 
@@ -88,6 +178,13 @@ Checkpoints are saved automatically at each of the 16 stages under `experiments/
 | Greedy Set Cover | Algorithm for selecting the minimal vaccine candidate set covering the escape panel (Stage 8) |
 | Lab-in-the-Loop (Active Learning) | Experimental feedback cycle — new binding data updates model and prioritizes next experiments (Stage 10) |
 | Checkpoint System | Incremental state persistence at each stage; enables resume from any point after failure |
+| Association Intermediate Structures (SA1) | Metastable states along the antibody-antigen association pathway captured by ML-accelerated MD and MSM; these pre-bound structures are hypothesized to be essential for accurate affinity prediction |
+| ML-Accelerated Molecular Dynamics (SA1) | Machine learning force fields or surrogate potentials that accelerate MD sampling beyond what classical MD can achieve in practical compute budgets; required to generate the large, diverse Ag-Ab trajectory dataset needed for SA1 |
+| Structure-Aware Paratope Embedding (SA2) | PLM-derived representations of antibody paratopes that capture structural convergence across sequences with different primary sequences but similar 3D binding modes |
+| Epitope Binning (SA2) | Experimental or computational classification of antibodies by which epitope region on the antigen they target; implemented computationally via the Stage 2a affinity matrix but requires discrete bin assignment logic |
+| SHM Hotspot-Parameterized Evolvability (SA2) | Mutation rate models where substitution probabilities are position-dependent, reflecting known WRCY/RGYW somatic hypermutation hotspot motifs; enables realistic in-silico affinity maturation |
+| Per-Individual BCR Fingerprint (SA3b) | A structured summary of an individual's B-cell immune response profile, categorizing BCR repertoire composition by neutralization mechanism category (e.g., V1/V2 vs. V3 binders); used to estimate protection against HIV-1 variants |
+| Variant-Susceptibility Model (SA3a) | A precision, individualized model correlating the statistical distribution of variant-specific paratopes in longitudinal BCR data with observed SARS-CoV-2 disease progression |
 
 ---
 
@@ -569,3 +666,31 @@ Checkpoints are saved automatically at each of the 16 stages under `experiments/
 | Checkpoint versioning | No schema versioning on checkpoint directories — if pipeline logic changes between runs, older checkpoints may be incompatible with resume |
 | GPU dependency | Full ALM (ESM2 650M) requires GPU for practical runtimes; mock mode substitutes random scores, which are not scientifically valid for production use |
 | Wet lab integration latency | Lab-in-the-loop (Stage 10) requires physical experimental turnaround time; the pipeline has no built-in mechanism to pause and wait for new `binding_data.csv` — this handoff is manual |
+
+### SA1-Specific Open Questions
+
+| Area | Issue |
+|---|---|
+| Association intermediate definition | The pipeline currently analyzes MD trajectories post-hoc via MSM (Stages 2.5, 4); there is no explicit intermediate-state annotation step that labels frames as "association intermediates" vs. bound/unbound states — this labeling logic must be defined before motif identification can occur |
+| ML-accelerated MD coupling | Stage 2b uses standard MD backends (OpenMM/GROMACS); ML-accelerated MD (e.g., TorchMD, OpenMM-ML, MLFF) is not yet integrated — the SA1 requirement for "ML-accelerated MD" implies a backend upgrade or a separate simulation layer |
+| Dataset diversity requirement | SA1 specifies a "large dataset of diverse antibody-antigen complex structures"; current Stage 2b is scoped to a single complex (one PDB structure); a multi-complex, multi-target dataset pipeline requires structural data orchestration not currently present |
+| Recurrent motif identification | No downstream analysis stage currently identifies or annotates recurrent structural motifs across the association intermediate ensemble — this is a gap between the MSM output (States 2.5/4) and the SA1 scientific goal |
+
+### SA2-Specific Open Questions
+
+| Area | Issue |
+|---|---|
+| Structure-aware paratope representation | Current Stage 2 (LM Scoring) uses ESM2 sequence-level embeddings; SA2 requires explicitly structure-aware paratope representations — this may require integrating structure prediction (ESMFold, AlphaFold) before embedding, not yet implemented |
+| Epitope-binning integration | SA2 specifies epitope-binning assays to identify epitopes and corresponding paratopes; Stage 2a computes an affinity matrix but does not perform discrete epitope-bin assignment — a binning classification step is needed |
+| SHM hotspot modeling | Stage 5 (Synthetic Evolution) uses a uniform mutation rate (`mutation_rate` scalar in `EvolutionConfig`); SA2 requires mutation rates parameterized by known SHM hotspot positions (WRCY/RGYW motifs), which are sequence-position-dependent and not currently modeled |
+| Pathogen evolution prediction | SA2 explicitly aims to predict pathogen variants that evade the existing BCR repertoire — this is partially covered by Stage 0 (escape panel generation via computational mutagenesis), but SA2 implies a PLM-driven forward prediction of likely future variants, not exhaustive combinatorial mutagenesis |
+
+### SA3-Specific Open Questions
+
+| Area | Issue |
+|---|---|
+| Longitudinal BCR data handling | SA3a requires correlating the statistical distribution of variant-specific paratopes with disease progression over time — current Stage 1 loads BCR data as a static snapshot; longitudinal time-indexing of BCR samples per individual is not yet implemented |
+| Per-individual atlas | SA3b requires a per-individual B-cell immune fingerprint; current Stage 1 builds a single population-level atlas (centroid + covariance) — per-individual atlases require subject-stratified loading and separate atlas objects per donor |
+| HIV Env epitope categorization | SA3b categorizes antibodies by binding mechanism (V1/V2 vs. V3); Stage 7 cross-reactivity analysis produces an undifferentiated coverage matrix — a mechanism-category label layer must be added to stratify coverage by neutralization modality |
+| Variant-susceptibility model output | SA3a's precision susceptibility model is not a current pipeline output; Stage 9 produces Pearson/Spearman correlations between predicted and measured binding, but a per-individual susceptibility score (integrating paratope distribution, variant profile, and disease outcome) is not yet formalized |
+| Baseline performance gap | Current experimental validation metrics (Pearson r = 0.276, Spearman = 0.302, ROC AUC = 0.648) are modest; SA1's hypothesis that adding association intermediate structural data to training will improve these is testable but unverified — these metrics constitute the pre-SA1-enrichment baseline |
