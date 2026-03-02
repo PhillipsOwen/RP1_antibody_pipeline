@@ -23,6 +23,12 @@ This repository spans three interconnected research projects (RPs) linking withi
 
 **Codebase:** [RP1_antibody_pipeline/](RP1_antibody_pipeline/)
 
+**Pipeline Diagrams:**
+
+![RP1 Antibody Discovery — High Level Processes](RP1%20Antibody%20discovery%20-%20High%20level%20processes.png)
+
+![RP1 Antibody Discovery — Data and Staging](RP1%20Antibody%20discovery%20-%20Data%20and%20staging.png)
+
 ---
 
 ### RP2: Spatiotemporal Dynamics of Cell-Virus Interactions

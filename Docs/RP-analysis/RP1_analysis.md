@@ -134,6 +134,12 @@ Stage 10: Lab-in-the-Loop Refinement
 
 Checkpoints are saved automatically at each of the 16 stages under `experiments/checkpoints/<run_id>/`.
 
+### Pipeline Diagrams
+
+![RP1 Antibody Discovery — High Level Processes](RP1%20Antibody%20discovery%20-%20High%20level%20processes.png)
+
+![RP1 Antibody Discovery — Data and Staging](RP1%20Antibody%20discovery%20-%20Data%20and%20staging.png)
+
 ---
 
 ## Key Scientific Objectives
